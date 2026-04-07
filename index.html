@@ -8,58 +8,63 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        .neon-text { color: #00f2ff; text-shadow: 0 0 10px rgba(0,242,255,0.5); }
+        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .neon-text { color: #00f2ff; text-shadow: 0 0 12px rgba(0,242,255,0.6); }
+        .gold-border { border: 1px solid rgba(212, 175, 55, 0.4); }
         .status-blink { animation: blink 1.5s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .zone-active { background-color: #d4af37 !important; color: #000 !important; font-weight: 900; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        .zone-btn { transition: 0.3s; background: #111; color: #555; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .zone-active { background: #d4af37 !important; color: #000 !important; }
     </style>
 </head>
-<body class="p-4 bg-black">
+<body class="p-4">
 
     <header class="flex justify-between items-start mb-6">
-        <div>
+        <div class="border-l-2 border-[#00f2ff] pl-3">
             <h1 class="text-2xl font-black italic tracking-tighter">VITO <span class="neon-text">COMMAND</span></h1>
-            <p class="text-[9px] text-gray-600 font-bold uppercase">Bad Hersfeld | Elite System</p>
+            <p class="text-[9px] text-gray-600 font-bold uppercase tracking-[0.2em]">Bad Hersfeld | Tactical Kitchen Elite</p>
         </div>
-        <div class="text-right bg-[#111] p-3 rounded-2xl border border-gray-800">
-            <div id="dbStatus" class="text-[10px] font-bold uppercase text-gray-700">Connecting ●</div>
-            <div class="text-lg font-bold text-white">4.0°C</div>
+        <div class="text-right bg-[#0a0a0a] p-3 rounded-2xl gold-border">
+            <div id="dbStatus" class="text-[9px] font-bold uppercase text-red-600 status-blink">Offline ●</div>
+            <div class="text-lg font-black text-white">4.0°C</div>
         </div>
     </header>
 
-    <div class="bg-[#111] p-5 rounded-[2rem] border border-[#00f2ff]/10 mb-4 text-center">
-        <button id="vBtn" class="w-14 h-14 bg-[#222] rounded-full text-xl border border-gray-800 active:bg-[#00f2ff] transition-all">🎙️</button>
-        <p class="text-[10px] text-gray-500 mt-2 italic uppercase tracking-widest">System Bereit</p>
+    <div class="bg-[#111] p-5 rounded-[2.5rem] border border-[#00f2ff]/10 mb-5 text-center shadow-2xl">
+        <button id="vBtn" class="w-16 h-16 bg-[#1a1a1a] rounded-full text-2xl border border-gray-800 active:scale-90 active:bg-[#00f2ff]/20 transition-all flex items-center justify-center mx-auto mb-2">🎙️</button>
+        <div id="aiOut" class="text-[11px] text-gray-500 italic font-medium px-4">Bereit für Nadine...</div>
     </div>
 
-    <div class="flex gap-1 mb-4">
-        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="zone-active flex-1 py-3 bg-[#111] text-[10px] rounded-xl uppercase transition-all text-gray-500">🧊 Kühl</button>
-        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="flex-1 py-3 bg-[#111] text-gray-500 text-[10px] rounded-xl uppercase transition-all">❄️ Frost</button>
-        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-3 bg-[#111] text-gray-500 text-[10px] rounded-xl uppercase transition-all">📦 Vorrat</button>
+    <div class="flex gap-2 mb-5">
+        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="zone-btn zone-active flex-1 py-4 rounded-2xl">🧊 Kühl</button>
+        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="zone-btn flex-1 py-4 rounded-2xl">❄️ Frost</button>
+        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="zone-btn flex-1 py-4 rounded-2xl">📦 Vorrat</button>
     </div>
 
-    <div class="bg-[#111] p-5 rounded-[2rem] border border-gray-800 mb-4">
-        <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-gray-900 flex items-center justify-center">
+    <div class="bg-[#111] p-5 rounded-[2.5rem] border border-gray-800 mb-5">
+        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-gray-900 flex items-center justify-center">
             <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
             <canvas id="canvas" class="hidden"></canvas>
-            <div id="placeholder" class="text-[10px] text-gray-700 font-bold uppercase text-center p-4">Kamera Standby</div>
+            <div id="cp" class="text-center">
+                <div class="text-[10px] text-gray-700 font-black uppercase tracking-widest mb-2">Tactical Scouter Standby</div>
+                <div class="text-[8px] text-gray-800 uppercase" id="debugInfo">System ready</div>
+            </div>
         </div>
-        <button id="sBtn" class="w-full py-4 mt-4 bg-[#00f2ff] text-black font-black rounded-2xl uppercase shadow-lg text-sm active:scale-95 transition-all">Scanner aktivieren</button>
+        <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-[1.5rem] uppercase shadow-lg shadow-[#00f2ff]/20 text-sm tracking-tighter">Scanner aktivieren</button>
     </div>
 
-    <div class="bg-[#111] p-5 rounded-[2rem] border border-gray-800 mb-20">
-        <div class="flex justify-between items-center mb-4">
-            <h3 id="zoneTitle" class="text-[10px] font-bold text-[#d4af37] uppercase">Bestand: Kühl</h3>
-            <button onclick="window.open('https://keep.google.com/')" class="text-[8px] border border-[#00f2ff] text-[#00f2ff] px-2 py-1 rounded font-bold uppercase">Keep Sync</button>
+    <div class="bg-[#111] p-6 rounded-[2.5rem] border border-gray-800 mb-24">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase tracking-widest">Bestand: Kühlzone</h3>
+            <button onclick="window.open('https://keep.google.com/')" class="text-[9px] border border-[#00f2ff] text-[#00f2ff] px-3 py-1.5 rounded-full font-bold uppercase hover:bg-[#00f2ff] hover:text-black transition-all">Keep Sync</button>
         </div>
-        <div id="invList" class="space-y-3 text-sm text-gray-300">
-            <p class="text-center py-4 italic text-gray-800">Lade Inventar...</p>
+        <div id="invList" class="space-y-4 text-sm text-gray-300">
+            <p class="text-center py-10 italic text-gray-700 animate-pulse">Synchronisiere Datenbank...</p>
         </div>
     </div>
 
     <script>
-        // --- 1. FIREBASE KONFIGURATION (KORRIGIERT) ---
+        // --- 1. FIREBASE DNA ---
         const firebaseConfig = {
             apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ",
             authDomain: "gen-lang-client-0348637849.firebaseapp.com",
@@ -69,47 +74,55 @@
             appId: "1:1008937513696:web:1c0a2bc7792daf689a5685"
         };
 
-        // --- 2. GROQ KEY (KORRIGIERT) ---
-        const GROQ_KEY = "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";
+        // --- 2. KI DNA ---
+        const GK = "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";
 
-        // Initialisierung
+        // INIT
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        let currentZone = 'FRIDGE';
-        let isCamOn = false;
+        let curZ = 'FRIDGE';
+        let camActive = false;
 
         const video = document.getElementById('v');
         const sBtn = document.getElementById('sBtn');
         const invList = document.getElementById('invList');
         const dbStatus = document.getElementById('dbStatus');
+        const aiOut = document.getElementById('aiOut');
 
+        // SYNC LOGIK
         function sync() {
-            db.collection("inventory").where("zone", "==", currentZone).orderBy("addedAt", "desc").onSnapshot(snap => {
+            db.collection("inventory").where("zone", "==", curZ).orderBy("addedAt", "desc").onSnapshot(snap => {
                 dbStatus.innerText = "Online ●";
-                dbStatus.className = "text-[10px] font-bold uppercase text-[#00ff41] status-blink";
+                dbStatus.className = "text-[9px] font-bold uppercase text-[#00ff41] status-blink";
                 invList.innerHTML = snap.docs.map(doc => `
-                    <div class="flex justify-between items-center py-3 border-b border-gray-900">
-                        <span class="font-bold text-white uppercase text-xs">${doc.data().name}</span>
-                        <span class="text-[10px] text-gray-600 font-mono">${doc.data().mhd || 'OFFEN'}</span>
+                    <div class="flex justify-between items-center py-4 border-b border-gray-900/50">
+                        <div class="flex flex-col">
+                            <span class="font-black text-white text-xs uppercase tracking-tight">${doc.data().name}</span>
+                            <span class="text-[8px] text-[#00f2ff] uppercase font-bold mt-0.5">${curZ}</span>
+                        </div>
+                        <span class="text-[10px] text-gray-500 font-mono bg-[#1a1a1a] px-2 py-1 rounded-md border border-gray-800">${doc.data().mhd || 'MHD offen'}</span>
                     </div>
-                `).join('') || '<p class="text-center py-4 text-gray-800 italic text-xs">Zone leer</p>';
+                `).join('') || '<p class="text-center py-10 text-gray-800 font-bold uppercase text-[10px] tracking-widest">Zone Leer</p>';
             }, err => {
-                dbStatus.innerText = "Sync Error X";
-                dbStatus.className = "text-[10px] font-bold uppercase text-red-600";
+                dbStatus.innerText = "Error X";
+                dbStatus.className = "text-[9px] font-bold uppercase text-red-600";
             });
         }
         sync();
 
+        // SCANNER
         sBtn.addEventListener('click', async () => {
-            if (!isCamOn) {
+            if (!camActive) {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment', width: 1280, height: 720 } 
+                    });
                     video.srcObject = stream;
                     video.classList.remove('hidden');
-                    document.getElementById('placeholder').classList.add('hidden');
-                    sBtn.innerText = "Einheit analysieren";
-                    isCamOn = true;
-                } catch (e) { alert("Kamera-Fehler"); }
+                    document.getElementById('cp').classList.add('hidden');
+                    sBtn.innerText = "PRODUKT ANALYSIEREN";
+                    camActive = true;
+                } catch (e) { alert("Kamera-Fehler: Bitte Berechtigung prüfen."); }
             } else {
                 analyze();
             }
@@ -117,49 +130,62 @@
 
         async function analyze() {
             sBtn.disabled = true;
-            sBtn.innerText = "VITO ANALYSIERT...";
+            sBtn.innerText = "KI-SCOUT ANALYSIERT...";
+            aiOut.innerText = "Führe taktische Analyse durch...";
+            
             const canvas = document.getElementById('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
             
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_KEY}` },
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GK}` },
                     body: JSON.stringify({
                         model: "llama-3.2-11b-vision-preview",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "JSON: { 'name': '...', 'mhd': '...' }" },
-                            { type: "image_url", image_url: { url: canvas.toDataURL('image/jpeg') } }
+                            { type: "text", text: "Identifiziere das Produkt und MHD. JSON Format: { 'name': '...', 'mhd': '...' }" },
+                            { type: "image_url", image_url: { url: canvas.toDataURL('image/jpeg', 0.6) } }
                         ]}],
                         response_format: { type: "json_object" }
                     })
                 });
-                const json = await res.json();
+                
+                const json = await response.json();
+                if (!json.choices) throw new Error("KI Antwort ungültig");
+                
                 const data = JSON.parse(json.choices[0].message.content);
+                
                 await db.collection("inventory").add({
                     ...data,
-                    zone: currentZone,
+                    zone: curZ,
                     addedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
+                aiOut.innerText = `${data.name} wurde in ${curZ} erfasst.`;
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch (e) { alert("KI-Kommunikation fehlgeschlagen."); }
+            } catch (e) { 
+                alert("Analyse-Fehler: " + e.message); 
+                aiOut.innerText = "Fehler bei der Kommunikation.";
+            }
             sBtn.disabled = false;
-            sBtn.innerText = "Einheit analysieren";
+            sBtn.innerText = "PRODUKT ANALYSIEREN";
         }
 
+        // NAVIGATION
         window.setZone = (z) => {
-            currentZone = z;
-            document.getElementById('zoneTitle').innerText = "Bestand: " + (z=='FRIDGE'?'Kühl':z=='FREEZER'?'Frost':'Vorrat');
+            curZ = z;
+            document.getElementById('zT').innerText = "Bestand: " + (z=='FRIDGE'?'Kühlzone':z=='FREEZER'?'Frostzone':'Vorratsschrank');
             ['FRIDGE','FREEZER','PANTRY'].forEach(id => {
                 document.getElementById('z-'+id).classList.toggle('zone-active', id === z);
             });
             sync();
         };
 
+        // VOICE
         document.getElementById('vBtn').addEventListener('click', () => {
-            const t = "VITO System online. Nadine, alles ist bereit.";
+            const t = "VITO System online. Datenbank für Bad Hersfeld synchronisiert. Was kann ich für Nadine tun?";
             const s = new SpeechSynthesisUtterance(t);
             s.lang = 'de-DE';
             window.speechSynthesis.speak(s);
