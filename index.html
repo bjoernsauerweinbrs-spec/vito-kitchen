@@ -8,13 +8,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         .neon-text { color: #00f2ff; text-shadow: 0 0 15px rgba(0,242,255,0.7); }
-        .gold-accent { color: #d4af37; }
         .status-blink { animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .zone-active { background: #d4af37 !important; color: #000 !important; font-weight: 900; box-shadow: 0 0 20px rgba(212,175,55,0.4); }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="p-4 pb-32">
@@ -26,7 +25,7 @@
         </div>
         <div class="text-right glass p-3 rounded-2xl border border-[#d4af37]/30">
             <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Offline ●</div>
-            <div id="liveTemp" class="text-xl font-black italic text-white">4.0°C</div>
+            <div id="liveTemp" class="text-xl font-black italic text-white italic">SYNC...</div>
         </div>
     </header>
 
@@ -38,8 +37,8 @@
                 <p id="aiMsg" class="text-[11px] text-gray-400 italic">"Nadine, was kochen wir heute?"</p>
             </div>
         </div>
-        <div id="recipeBox" class="hidden mt-4 p-5 bg-black/70 rounded-3xl border border-gray-900 text-xs leading-relaxed">
-            <p class="gold-accent font-black uppercase mb-1 text-[10px]">Vorschlag:</p>
+        <div id="recipeBox" class="hidden mt-4 p-5 bg-black/80 rounded-3xl border border-gray-900 text-xs leading-relaxed">
+            <p class="text-[#d4af37] font-black uppercase mb-1 text-[10px]">Vorschlag:</p>
             <div id="recipeText" class="text-white italic"></div>
         </div>
     </section>
@@ -50,41 +49,41 @@
         <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black uppercase text-gray-600">📦 Vorrat</button>
     </div>
 
-    <div class="glass p-5 rounded-[2.5rem] mb-6">
+    <div class="glass p-5 rounded-[2.5rem] mb-6 relative">
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-gray-900 flex items-center justify-center">
             <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
             <canvas id="canvas" class="hidden"></canvas>
-            <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase tracking-widest">Scouter Standby</div>
+            <div id="cp" class="text-center text-gray-800 font-black text-[10px] uppercase tracking-widest">Scanner Standby</div>
         </div>
         <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95">Produkt analysieren</button>
     </div>
 
     <section class="glass p-5 rounded-[2.5rem] mb-6 border border-[#d4af37]/20">
-        <h3 class="text-xs font-black gold-accent uppercase tracking-widest mb-4">📍 Radar: Bad Hersfeld</h3>
+        <h3 class="text-xs font-black text-[#d4af37] uppercase tracking-widest mb-4">📍 Radar: Bad Hersfeld Deals</h3>
         <div class="space-y-3">
-            <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-900"><span class="text-[10px] font-bold uppercase">Lidl Hersfelder Str.</span><span class="text-[10px] text-[#00ff41] font-mono italic">Butter 1.49€</span></div>
-            <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-900"><span class="text-[10px] font-bold uppercase">Aldi Marktplatz</span><span class="text-[10px] text-[#00ff41] font-mono italic">Eier 1.99€</span></div>
-            <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-900"><span class="text-[10px] font-bold uppercase">Rewe City</span><span class="text-[10px] text-[#00ff41] font-mono italic">Milch 1.15€</span></div>
+            <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-900"><span class="text-[10px] font-bold">LIDL Hersfelder Str.</span><span class="text-[10px] text-[#00ff41] font-mono italic">Butter 1.49€</span></div>
+            <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-900"><span class="text-[10px] font-bold">ALDI Marktplatz</span><span class="text-[10px] text-[#00ff41] font-mono italic">Eier 1.99€</span></div>
+            <div class="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-gray-900"><span class="text-[10px] font-bold">REWE City</span><span class="text-[10px] text-[#00ff41] font-mono italic">Milch 1.15€</span></div>
         </div>
     </section>
 
     <div class="glass p-6 rounded-[2.5rem]">
         <div class="flex justify-between items-center mb-6">
-            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase">Bestand: Kühlzone</h3>
+            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase tracking-widest text-xs">Inventar: Kühl</h3>
             <button onclick="localStorage.removeItem('GK'); location.reload();" class="text-[8px] border border-red-500 text-red-500 px-3 py-1.5 rounded-full font-black uppercase">Reset Key</button>
         </div>
-        <div id="invList" class="space-y-4 text-xs min-h-[100px]">
-            <p class="text-center py-10 italic text-gray-700 text-[9px] uppercase tracking-widest">Daten laden...</p>
+        <div id="invList" class="space-y-4 text-xs">
+            <p class="text-center py-10 italic text-gray-700 text-[9px] uppercase tracking-widest">Lade Daten...</p>
         </div>
     </div>
 
     <script>
         const fbConfig = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         
-        // KEY MANAGEMENT (DER FIX)
+        // KEY PROTECTION: Wir speichern den Key lokal auf deinem Handy, damit GitHub ihn nicht sieht!
         let GK = localStorage.getItem('GK');
         if (!GK) {
-            GK = prompt("Bitte Google AI Key eingeben (Sicherheitsschutz):");
+            GK = prompt("Sicherheitsschutz: Bitte Google AI Key eingeben:");
             if (GK) localStorage.setItem('GK', GK);
         }
 
@@ -94,15 +93,19 @@
 
         const video = document.getElementById('v'), sBtn = document.getElementById('sBtn'), aiMsg = document.getElementById('aiMsg');
 
-        // TELEMETRIE (Live-Temp)
-        function syncT() {
+        // --- 1. LIVE TELEMETRIE: DEIN KÜHLSCHRANK ---
+        function syncTelemetry() {
             db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
-                if(doc.exists) document.getElementById('liveTemp').innerText = doc.data().temp + "°C";
+                if (doc.exists) {
+                    document.getElementById('liveTemp').innerText = doc.data().temp + "°C";
+                } else {
+                    document.getElementById('liveTemp').innerText = "4.0°C"; // Fallback wenn DB leer
+                }
             });
         }
 
-        // INVENTAR
-        function syncI() {
+        // --- 2. INVENTAR SYNC ---
+        function syncInventory() {
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
                 allStock = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 document.getElementById('dbStatus').innerText = "Online ●";
@@ -115,45 +118,45 @@
             const list = allStock.filter(i => i.zone === curZ);
             document.getElementById('invList').innerHTML = list.map(i => `
                 <div class="flex justify-between items-center py-3 border-b border-gray-900/50">
-                    <span class="font-black text-white uppercase tracking-tighter italic">${i.name}</span>
-                    <span class="text-[9px] text-gray-500 font-mono italic uppercase">${i.mhd || 'OFFEN'}</span>
+                    <span class="font-black text-white uppercase tracking-tighter italic text-xs">${i.name}</span>
+                    <span class="text-[9px] text-gray-500 font-mono bg-black px-2 py-1 rounded border border-gray-800 uppercase italic">${i.mhd || 'OFFEN'}</span>
                 </div>
-            `).join('') || '<p class="text-center py-8 text-gray-800 font-bold uppercase text-[9px]">Zone Leer</p>';
+            `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Zone Leer</p>';
         }
 
-        // KITCHEN CHEF
+        // --- 3. KITCHEN CHEF: REZEPT ASSISTENT ---
         document.getElementById('vBtn').addEventListener('click', async () => {
             if(allStock.length === 0) return;
-            aiMsg.innerText = "VITO durchsucht Vorräte...";
-            const sNames = allStock.map(i => i.name).join(', ');
+            aiMsg.innerText = "VITO prüft Bestand für Nadine...";
+            const names = allStock.map(i => i.name).join(', ');
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: `Bestand: ${sNames}. Schlage Nadine 1 schnelles Gericht vor. Nenne 2 Zutaten die fehlen.` }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Bestand: ${names}. Schlage Nadine 1 schnelles Gericht vor. Nenne kurz 2 Zutaten die fehlen.` }] }] })
                 });
                 const d = await res.json();
                 const text = d.candidates[0].content.parts[0].text;
                 document.getElementById('recipeBox').classList.remove('hidden');
                 document.getElementById('recipeText').innerText = text;
-                aiMsg.innerText = "Rezept steht!";
+                aiMsg.innerText = "Rezeptvorschlag bereit!";
                 window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-            } catch (e) { alert("Key ungültig! Nutze Reset Key unten."); }
+            } catch (e) { alert("Key-Fehler! Nutze Reset-Button unten."); }
         });
 
-        // SCANNER
+        // --- 4. SCANNER (GEMINI 1.5 FLASH) ---
         sBtn.addEventListener('click', async () => {
             if (!camOn) {
                 const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = s; video.classList.remove('hidden');
                 document.getElementById('cp').classList.add('hidden');
-                sBtn.innerText = "Analyse Starten"; camOn = true;
+                sBtn.innerText = "ANALYSE STARTEN"; camOn = true;
             } else {
                 analyze();
             }
         });
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "KI ANALYSE...";
+            sBtn.disabled = true; sBtn.innerText = "KI ANALYSIERT...";
             const canvas = document.getElementById('canvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
@@ -163,28 +166,29 @@
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         contents: [{ parts: [
-                            { text: "Was ist das? Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" },
+                            { text: "Identifiziere das Produkt und MHD. Antwort NUR als JSON: { 'name': '...', 'mhd': '...' }" },
                             { inline_data: { mime_type: "image/jpeg", data: b64 } }
                         ]}]
                     })
                 });
                 const d = await res.json();
                 const raw = d.candidates[0].content.parts[0].text;
-                const data = JSON.parse(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+                const clean = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
+                const data = JSON.parse(clean);
                 await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch (e) { alert("Key-Fehler oder Licht! Bitte Reset Key versuchen."); }
-            sBtn.disabled = false; sBtn.innerText = "Analyse Starten";
+            } catch (e) { alert("Analyse fehlgeschlagen! Bitte Licht prüfen."); }
+            sBtn.disabled = false; sBtn.innerText = "ANALYSE STARTEN";
         }
 
         window.setZone = (z) => {
             curZ = z;
-            document.getElementById('zT').innerText = "Inventar: " + (z=='FRIDGE'?'Kühlzone':z=='FREEZER'?'Frostzone':'Vorratsschrank');
+            document.getElementById('zT').innerText = "Inventar: " + (z=='FRIDGE'?'Kühlzone':z=='FREEZER'?'Frostzone':'Vorratskammer');
             ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('z-'+id).classList.toggle('zone-active', id === z));
             render();
         };
 
-        syncT(); syncI();
+        syncTelemetry(); syncInventory();
     </script>
 </body>
 </html>
