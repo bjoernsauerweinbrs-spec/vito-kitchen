@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NABY KEÏTA COMMAND</title>
+    <title>VITO COMMAND ELITE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -24,7 +24,7 @@
             <p class="text-[10px] text-gray-500 font-bold tracking-[0.3em]">BAD HERSFELD | TACTICAL HUB</p>
         </div>
         <div class="text-right glass p-3 rounded-2xl border border-[#d4af37]/30">
-            <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Verbinde ●</div>
+            <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Connecting ●</div>
             <div id="liveTemp" class="text-xl font-black text-white italic">4.0°C</div>
         </div>
     </header>
@@ -34,16 +34,16 @@
             <button id="vBtn" class="w-16 h-16 bg-[#111] rounded-full text-2xl flex items-center justify-center border border-gray-800 active:scale-95 shadow-lg shadow-[#00f2ff]/20">🎙️</button>
             <div class="flex-1">
                 <h3 class="text-xs font-black neon-text uppercase tracking-widest text-[#00f2ff]">Kitchen Chef</h3>
-                <p id="aiMsg" class="text-[11px] text-gray-400 italic">"Nadine, was kochen wir heute?"</p>
+                <p id="aiMsg" class="text-[11px] text-gray-400 italic font-medium">"Nadine, was kochen wir heute?"</p>
             </div>
         </div>
         <div id="recipeBox" class="hidden mt-4 p-5 bg-black/80 rounded-3xl border border-gray-900 text-xs leading-relaxed">
-            <p class="text-[#d4af37] font-black uppercase mb-1 text-[10px]">Vorschlag:</p>
+            <p class="text-[#d4af37] font-black uppercase mb-1 text-[10px]">VITO Tactical Suggestion:</p>
             <div id="recipeText" class="text-white italic">Warte auf Analyse...</div>
         </div>
     </section>
 
-    <div class="flex gap-2 mb-6">
+    <div class="flex gap-2 mb-6 text-center">
         <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black uppercase zone-active">🧊 Kühl</button>
         <button onclick="setZone('FREEZER')" id="z-FREEZER" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black uppercase text-gray-600">❄️ Frost</button>
         <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black uppercase text-gray-600">📦 Vorrat</button>
@@ -55,7 +55,7 @@
             <canvas id="canvas" class="hidden"></canvas>
             <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase">Scanner Standby</div>
         </div>
-        <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95">Produkt analysieren</button>
+        <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95">Analyse Starten</button>
     </div>
 
     <section class="glass p-5 rounded-[2.5rem] mb-6 border border-[#d4af37]/20">
@@ -80,6 +80,7 @@
     <script>
         const fbConfig = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         
+        // KEY PROTECTION: Lokaler Speicher gegen GitHub-Wachhund
         let GK = localStorage.getItem('GK');
         if (!GK) {
             GK = prompt("Sicherheitsschutz: Bitte Google AI Key eingeben:");
@@ -93,19 +94,15 @@
         function syncTelemetry() {
             db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
                 if (doc.exists) document.getElementById('liveTemp').innerText = doc.data().temp + "°C";
-            }, () => { console.log("Telemetrie offline"); });
+            });
         }
 
         function syncInventory() {
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
                 allStock = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                const dbS = document.getElementById('dbStatus');
-                dbS.innerText = "Online ●";
-                dbS.className = "text-[9px] font-black uppercase text-[#00ff41] status-blink";
+                document.getElementById('dbStatus').innerText = "Online ●";
+                document.getElementById('dbStatus').className = "text-[9px] font-black uppercase text-[#00ff41] status-blink";
                 render();
-            }, (err) => { 
-                document.getElementById('dbStatus').innerText = "Offline (Regel-Fehler)";
-                console.error(err); 
             });
         }
 
@@ -119,6 +116,9 @@
             `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Zone Leer</p>';
         }
 
+        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn'), aiMsg = document.getElementById('aiMsg');
+
+        // REZEPT LOGIK (BERATUNG)
         document.getElementById('vBtn').addEventListener('click', async () => {
             if(!GK || allStock.length === 0) return;
             aiMsg.innerText = "VITO prüft Bestand...";
@@ -137,8 +137,7 @@
             } catch (e) { alert("Key-Fehler!"); }
         });
 
-        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn'), aiMsg = document.getElementById('aiMsg');
-
+        // SCAN LOGIK (VISION)
         sBtn.addEventListener('click', async () => {
             if (!camOn) {
                 const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -153,9 +152,11 @@
         async function analyze() {
             sBtn.disabled = true; sBtn.innerText = "KI ANALYSIERT...";
             const canvas = document.getElementById('canvas');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            const b64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+            // BILD-OPTIMIERUNG: Wir verkleinern das Bild für den Upload
+            canvas.width = 640; 
+            canvas.height = 480;
+            canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
+            const b64 = canvas.toDataURL('image/jpeg', 0.4).split(',')[1];
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
@@ -166,7 +167,7 @@
                 const data = JSON.parse(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
                 await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch (e) { alert("Analyse fehlgeschlagen!"); }
+            } catch (e) { alert("Analyse fehlgeschlagen! Bitte Key oder Internet prüfen."); }
             sBtn.disabled = false; sBtn.innerText = "Analyse Starten";
         }
 
