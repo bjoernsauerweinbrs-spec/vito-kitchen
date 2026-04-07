@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VITO KITCHEN COMMAND</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #000; color: #fff; font-family: sans-serif; }
+        .neon-text { color: #00f2ff; text-shadow: 0 0 10px rgba(0,242,255,0.5); }
+        .status-blink { animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body class="p-4 bg-black text-white">
+
+    <header class="flex justify-between items-start mb-6">
+        <div>
+            <h1 class="text-2xl font-black tracking-tighter italic">VITO <span class="neon-text">COMMAND</span></h1>
+            <p class="text-[9px] text-gray-500 font-bold">BAD HERSFELD | GERD 2.0 LEGACY</p>
+        </div>
+        <div class="text-right bg-[#111] p-3 rounded-2xl border border-gray-800">
+            <div class="text-[10px] font-bold text-[#00ff41] status-blink uppercase">Croque Online ●</div>
+            <div class="text-lg font-bold">4.0°C</div>
+        </div>
+    </header>
+
+    <div class="bg-[#111] p-6 rounded-[2rem] border border-[#00f2ff]/20 mb-4 text-center">
+        <button id="vBtn" class="w-16 h-16 bg-[#222] rounded-full text-2xl border border-gray-800 active:scale-90 transition-all">🎙️</button>
+        <p class="text-[10px] text-gray-600 mt-2 uppercase tracking-widest">Assistent Standby</p>
+    </div>
+
+    <div class="flex gap-2 mb-4">
+        <button onclick="sz('KÜHL')" class="flex-1 py-3 bg-[#d4af37] text-black text-[10px] font-black rounded-xl uppercase">🧊 Kühl</button>
+        <button onclick="sz('FROST')" class="flex-1 py-3 bg-[#111] text-gray-500 text-[10px] font-black rounded-xl uppercase">❄️ Frost</button>
+        <button onclick="sz('VORRAT')" class="flex-1 py-3 bg-[#111] text-gray-500 text-[10px] font-black rounded-xl uppercase">📦 Vorrat</button>
+    </div>
+
+    <div class="bg-[#111] p-5 rounded-[2rem] border border-gray-800 mb-4">
+        <div class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-gray-900 flex items-center justify-center">
+            <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
+            <span id="cp" class="text-[10px] text-gray-700 font-bold uppercase">Scouter bereit</span>
+        </div>
+        <button id="sBtn" class="w-full py-4 mt-4 bg-[#00f2ff] text-black font-black rounded-2xl uppercase shadow-lg">Scanner aktivieren</button>
+    </div>
+
+    <div class="bg-[#111] p-5 rounded-[2rem] border border-gray-800 mb-6">
+        <h3 class="text-[10px] font-bold text-[#d4af37] uppercase mb-3">📍 Radar: Bad Hersfeld</h3>
+        <div class="grid grid-cols-4 gap-2 opacity-50 text-[8px] text-center font-bold">
+            <div class="bg-black p-2 rounded-lg border border-gray-800">LIDL</div>
+            <div class="bg-black p-2 rounded-lg border border-gray-800">ALDI</div>
+            <div class="bg-black p-2 rounded-lg border border-gray-800">REWE</div>
+            <div class="bg-black p-2 rounded-lg border border-gray-800">EDEKA</div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('v');
+        const sBtn = document.getElementById('sBtn');
+        const vBtn = document.getElementById('vBtn');
+
+        sBtn.addEventListener('click', async () => {
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = s;
+                video.classList.remove('hidden');
+                document.getElementById('cp').classList.add('hidden');
+                sBtn.innerText = "Produkt scannen";
+            } catch (e) { alert("Kamera-Zugriff erforderlich."); }
+        });
+
+        vBtn.addEventListener('click', () => {
+            const t = "Nadine, für die Lasagne fehlt uns noch Butter. Soll ich sie auf die Einkaufsliste setzen?";
+            const s = new SpeechSynthesisUtterance(t);
+            s.lang = 'de-DE';
+            window.speechSynthesis.speak(s);
+            alert("KI: " + t);
+        });
+
+        function sz(z) { alert("Zone gewechselt: " + z); }
+    </script>
+</body>
+</html>
