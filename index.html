@@ -12,7 +12,7 @@
         .neon-text { color: #00f2ff; text-shadow: 0 0 15px rgba(0,242,255,0.7); }
         .status-blink { animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .zone-active { background: #d4af37 !important; color: #000 !important; font-weight: 900; box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+        .zone-active { background: #d4af37 !important; color: #000 !important; font-weight: 900; }
         .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
@@ -21,11 +21,11 @@
     <header class="flex justify-between items-start mb-6 border-l-4 border-[#00f2ff] pl-4">
         <div>
             <h1 class="text-2xl font-black italic tracking-tighter uppercase">NABY KEÏTA <span class="neon-text">COMMAND</span></h1>
-            <p class="text-[10px] text-gray-500 font-bold tracking-[0.3em]">BAD HERSFELD | SMART KITCHEN ELITE</p>
+            <p class="text-[10px] text-gray-500 font-bold tracking-[0.3em]">BAD HERSFELD | TACTICAL HUB</p>
         </div>
         <div class="text-right glass p-3 rounded-2xl border border-[#d4af37]/30">
-            <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Offline ●</div>
-            <div id="liveTemp" class="text-xl font-black italic text-white italic">SYNC...</div>
+            <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Verbinde ●</div>
+            <div id="liveTemp" class="text-xl font-black text-white italic">4.0°C</div>
         </div>
     </header>
 
@@ -33,13 +33,13 @@
         <div class="flex items-center gap-4">
             <button id="vBtn" class="w-16 h-16 bg-[#111] rounded-full text-2xl flex items-center justify-center border border-gray-800 active:scale-95 shadow-lg shadow-[#00f2ff]/20">🎙️</button>
             <div class="flex-1">
-                <h3 class="text-xs font-black neon-text uppercase tracking-widest">Kitchen Chef</h3>
+                <h3 class="text-xs font-black neon-text uppercase tracking-widest text-[#00f2ff]">Kitchen Chef</h3>
                 <p id="aiMsg" class="text-[11px] text-gray-400 italic">"Nadine, was kochen wir heute?"</p>
             </div>
         </div>
         <div id="recipeBox" class="hidden mt-4 p-5 bg-black/80 rounded-3xl border border-gray-900 text-xs leading-relaxed">
             <p class="text-[#d4af37] font-black uppercase mb-1 text-[10px]">Vorschlag:</p>
-            <div id="recipeText" class="text-white italic"></div>
+            <div id="recipeText" class="text-white italic">Warte auf Analyse...</div>
         </div>
     </section>
 
@@ -53,7 +53,7 @@
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-gray-900 flex items-center justify-center">
             <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
             <canvas id="canvas" class="hidden"></canvas>
-            <div id="cp" class="text-center text-gray-800 font-black text-[10px] uppercase tracking-widest">Scanner Standby</div>
+            <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase">Scanner Standby</div>
         </div>
         <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95">Produkt analysieren</button>
     </div>
@@ -69,18 +69,17 @@
 
     <div class="glass p-6 rounded-[2.5rem]">
         <div class="flex justify-between items-center mb-6">
-            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase tracking-widest text-xs">Inventar: Kühl</h3>
+            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase">Inventar: Kühl</h3>
             <button onclick="localStorage.removeItem('GK'); location.reload();" class="text-[8px] border border-red-500 text-red-500 px-3 py-1.5 rounded-full font-black uppercase">Reset Key</button>
         </div>
-        <div id="invList" class="space-y-4 text-xs">
-            <p class="text-center py-10 italic text-gray-700 text-[9px] uppercase tracking-widest">Lade Daten...</p>
+        <div id="invList" class="space-y-4 text-xs min-h-[100px]">
+            <p class="text-center py-10 italic text-gray-700 text-[9px] uppercase">Daten laden...</p>
         </div>
     </div>
 
     <script>
         const fbConfig = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         
-        // KEY PROTECTION: Wir speichern den Key lokal auf deinem Handy, damit GitHub ihn nicht sieht!
         let GK = localStorage.getItem('GK');
         if (!GK) {
             GK = prompt("Sicherheitsschutz: Bitte Google AI Key eingeben:");
@@ -91,26 +90,22 @@
         const db = firebase.firestore();
         let curZ = 'FRIDGE', camOn = false, allStock = [];
 
-        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn'), aiMsg = document.getElementById('aiMsg');
-
-        // --- 1. LIVE TELEMETRIE: DEIN KÜHLSCHRANK ---
         function syncTelemetry() {
             db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
-                if (doc.exists) {
-                    document.getElementById('liveTemp').innerText = doc.data().temp + "°C";
-                } else {
-                    document.getElementById('liveTemp').innerText = "4.0°C"; // Fallback wenn DB leer
-                }
-            });
+                if (doc.exists) document.getElementById('liveTemp').innerText = doc.data().temp + "°C";
+            }, () => { console.log("Telemetrie offline"); });
         }
 
-        // --- 2. INVENTAR SYNC ---
         function syncInventory() {
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
                 allStock = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('dbStatus').innerText = "Online ●";
-                document.getElementById('dbStatus').className = "text-[9px] font-black uppercase text-[#00ff41] status-blink";
+                const dbS = document.getElementById('dbStatus');
+                dbS.innerText = "Online ●";
+                dbS.className = "text-[9px] font-black uppercase text-[#00ff41] status-blink";
                 render();
+            }, (err) => { 
+                document.getElementById('dbStatus').innerText = "Offline (Regel-Fehler)";
+                console.error(err); 
             });
         }
 
@@ -119,37 +114,37 @@
             document.getElementById('invList').innerHTML = list.map(i => `
                 <div class="flex justify-between items-center py-3 border-b border-gray-900/50">
                     <span class="font-black text-white uppercase tracking-tighter italic text-xs">${i.name}</span>
-                    <span class="text-[9px] text-gray-500 font-mono bg-black px-2 py-1 rounded border border-gray-800 uppercase italic">${i.mhd || 'OFFEN'}</span>
+                    <span class="text-[9px] text-gray-500 font-mono bg-black px-2 py-1 rounded border border-gray-800 uppercase">${i.mhd || 'OFFEN'}</span>
                 </div>
             `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Zone Leer</p>';
         }
 
-        // --- 3. KITCHEN CHEF: REZEPT ASSISTENT ---
         document.getElementById('vBtn').addEventListener('click', async () => {
-            if(allStock.length === 0) return;
-            aiMsg.innerText = "VITO prüft Bestand für Nadine...";
+            if(!GK || allStock.length === 0) return;
+            aiMsg.innerText = "VITO prüft Bestand...";
             const names = allStock.map(i => i.name).join(', ');
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: `Bestand: ${names}. Schlage Nadine 1 schnelles Gericht vor. Nenne kurz 2 Zutaten die fehlen.` }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Ich habe: ${names}. Schlage Nadine 1 schnelles Gericht vor. Nenne kurz 2 Zutaten die fehlen.` }] }] })
                 });
                 const d = await res.json();
                 const text = d.candidates[0].content.parts[0].text;
                 document.getElementById('recipeBox').classList.remove('hidden');
                 document.getElementById('recipeText').innerText = text;
-                aiMsg.innerText = "Rezeptvorschlag bereit!";
+                aiMsg.innerText = "Vorschlag bereit!";
                 window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-            } catch (e) { alert("Key-Fehler! Nutze Reset-Button unten."); }
+            } catch (e) { alert("Key-Fehler!"); }
         });
 
-        // --- 4. SCANNER (GEMINI 1.5 FLASH) ---
+        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn'), aiMsg = document.getElementById('aiMsg');
+
         sBtn.addEventListener('click', async () => {
             if (!camOn) {
                 const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = s; video.classList.remove('hidden');
                 document.getElementById('cp').classList.add('hidden');
-                sBtn.innerText = "ANALYSE STARTEN"; camOn = true;
+                sBtn.innerText = "Analyse Starten"; camOn = true;
             } else {
                 analyze();
             }
@@ -164,26 +159,20 @@
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{ parts: [
-                            { text: "Identifiziere das Produkt und MHD. Antwort NUR als JSON: { 'name': '...', 'mhd': '...' }" },
-                            { inline_data: { mime_type: "image/jpeg", data: b64 } }
-                        ]}]
-                    })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Was ist das? Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }] })
                 });
                 const d = await res.json();
                 const raw = d.candidates[0].content.parts[0].text;
-                const clean = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
-                const data = JSON.parse(clean);
+                const data = JSON.parse(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
                 await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch (e) { alert("Analyse fehlgeschlagen! Bitte Licht prüfen."); }
-            sBtn.disabled = false; sBtn.innerText = "ANALYSE STARTEN";
+            } catch (e) { alert("Analyse fehlgeschlagen!"); }
+            sBtn.disabled = false; sBtn.innerText = "Analyse Starten";
         }
 
         window.setZone = (z) => {
             curZ = z;
-            document.getElementById('zT').innerText = "Inventar: " + (z=='FRIDGE'?'Kühlzone':z=='FREEZER'?'Frostzone':'Vorratskammer');
+            document.getElementById('zT').innerText = "Inventar: " + (z=='FRIDGE'?'Kühl':z=='FREEZER'?'Frost':'Vorrat');
             ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('z-'+id).classList.toggle('zone-active', id === z));
             render();
         };
