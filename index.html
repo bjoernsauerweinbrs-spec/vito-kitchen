@@ -34,7 +34,7 @@
     </div>
 
     <div class="flex gap-1 mb-4">
-        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="zone-active flex-1 py-3 bg-[#111] text-[10px] rounded-xl uppercase transition-all">🧊 Kühl</button>
+        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="zone-active flex-1 py-3 bg-[#111] text-[10px] rounded-xl uppercase transition-all text-gray-500">🧊 Kühl</button>
         <button onclick="setZone('FREEZER')" id="z-FREEZER" class="flex-1 py-3 bg-[#111] text-gray-500 text-[10px] rounded-xl uppercase transition-all">❄️ Frost</button>
         <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-3 bg-[#111] text-gray-500 text-[10px] rounded-xl uppercase transition-all">📦 Vorrat</button>
     </div>
@@ -59,6 +59,7 @@
     </div>
 
     <script>
+        // --- 1. FIREBASE KONFIGURATION (KORRIGIERT) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ",
             authDomain: "gen-lang-client-0348637849.firebaseapp.com",
@@ -68,8 +69,10 @@
             appId: "1:1008937513696:web:1c0a2bc7792daf689a5685"
         };
 
+        // --- 2. GROQ KEY (KORRIGIERT) ---
         const GROQ_KEY = "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";
 
+        // Initialisierung
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         let currentZone = 'FRIDGE';
@@ -91,7 +94,7 @@
                     </div>
                 `).join('') || '<p class="text-center py-4 text-gray-800 italic text-xs">Zone leer</p>';
             }, err => {
-                dbStatus.innerText = "Error X";
+                dbStatus.innerText = "Sync Error X";
                 dbStatus.className = "text-[10px] font-bold uppercase text-red-600";
             });
         }
@@ -104,7 +107,7 @@
                     video.srcObject = stream;
                     video.classList.remove('hidden');
                     document.getElementById('placeholder').classList.add('hidden');
-                    sBtn.innerText = "Produkt scannen";
+                    sBtn.innerText = "Einheit analysieren";
                     isCamOn = true;
                 } catch (e) { alert("Kamera-Fehler"); }
             } else {
@@ -141,9 +144,9 @@
                     addedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch (e) { alert("Analyse-Fehler"); }
+            } catch (e) { alert("KI-Kommunikation fehlgeschlagen."); }
             sBtn.disabled = false;
-            sBtn.innerText = "Produkt scannen";
+            sBtn.innerText = "Einheit analysieren";
         }
 
         window.setZone = (z) => {
@@ -156,7 +159,7 @@
         };
 
         document.getElementById('vBtn').addEventListener('click', () => {
-            const t = "VITO System online. Datenbank bereit.";
+            const t = "VITO System online. Nadine, alles ist bereit.";
             const s = new SpeechSynthesisUtterance(t);
             s.lang = 'de-DE';
             window.speechSynthesis.speak(s);
