@@ -82,6 +82,7 @@
         .data-card { background: rgba(255,255,255,0.02); border-radius: 30px; padding: 25px; border: 1px solid rgba(255,255,255,0.03); min-height: 200px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .row b { color: var(--gold); font-size: 14px; text-transform: uppercase; font-style: italic; }
+        .row .mhd { font-family: monospace; font-size: 10px; color: var(--neon); opacity: 0.7; margin-right: 15px; }
 
         /* TERMINAL */
         .terminal { 
@@ -145,7 +146,6 @@
         let stock = [];
         let db;
 
-        // Firebase Config
         const cfg = { 
             apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", 
             authDomain: "gen-lang-client-0348637849.firebaseapp.com", 
@@ -159,9 +159,7 @@
         const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
 
         // INITIALISIERUNG
-        if(GRK && GRK.startsWith('gsk_')) {
-            startApp();
-        }
+        if(GRK && GRK.startsWith('gsk_')) { startApp(); }
 
         function bootSystem() {
             const input = document.getElementById('api-input').value.trim();
@@ -169,35 +167,25 @@
                 localStorage.setItem('GRK', input);
                 GRK = input;
                 startApp();
-            } else {
-                alert("Authentifizierung fehlgeschlagen. Key muss mit 'gsk_' beginnen.");
-            }
+            } else { alert("Authentifizierung fehlgeschlagen. Key muss mit 'gsk_' beginnen."); }
         }
 
-        function resetSystem() {
-            localStorage.removeItem('GRK');
-            location.reload();
-        }
+        function resetSystem() { localStorage.removeItem('GRK'); location.reload(); }
 
         function startApp() {
             document.getElementById('boot-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
 
-            if (!firebase.apps.length) {
-                firebase.initializeApp(cfg);
-            }
+            if (!firebase.apps.length) firebase.initializeApp(cfg);
             db = firebase.firestore();
 
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
                 stock = s.docs.map(d => ({id: d.id, ...d.data()}));
                 render();
-            }, error => {
-                log("Datenbank-Fehler: " + error.message, true);
-            });
+            }, error => { log("Datenbank-Fehler: " + error.message, true); });
             log("Verbindung zur Zentrale hergestellt.");
         }
 
-        // UI RENDER LOGIK
         function render() {
             const cont = document.getElementById('l-content');
             const filtered = stock.filter(i => i.zone === mode);
@@ -207,7 +195,10 @@
             cont.innerHTML = filtered.map(i => `
                 <div class="row">
                     <b>${i.name}</b>
-                    <span onclick="del('${i.id}')" style="color:#ff3e3e; font-size:20px; font-weight:bold; cursor:pointer;">×</span>
+                    <div style="display:flex; align-items:center;">
+                        <span class="mhd">${i.mhd || ''}</span>
+                        <span onclick="del('${i.id}')" style="color:#ff3e3e; font-size:20px; font-weight:bold; cursor:pointer;">×</span>
+                    </div>
                 </div>
             `).join('') || '<div style="text-align:center; padding:30px; color:#111; font-weight:900;">HUB EMPTY</div>';
         }
@@ -220,7 +211,6 @@
             render();
         };
 
-        // KAMERA & KI LOGIK
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), laser = document.getElementById('laser');
         let cam = false;
 
@@ -245,16 +235,33 @@
             can.getContext('2d').drawImage(v, 0, 0, 640, 640);
             
             try {
-                log("Kontaktiere Groq Llama-3.2-90b Vision...");
+                log("Kontaktiere Groq Llama-3.2-11b Vision...");
+                
+                // EXAKT DER CODE AUS DEINEM BLUEPRINT:
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${GRK}` // (Wir fügen nur den Key hinzu, weil wir kein Backend haben)
+                    },
                     body: JSON.stringify({
-                        model: "llama-3.2-90b-vision-preview",
-                        messages: [{ role: "user", content: [
-                            { type: "text", text: "Analysiere alle sichtbaren Produkte. Antworte AUSSCHLIESSLICH als JSON-Array: [ { \"name\": \"Produkt\", \"mhd\": \"Datum/Info\" } ]" },
-                            { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.5) } }
-                        ]}]
+                        model: "llama-3.2-11b-vision-preview",
+                        messages: [
+                        { 
+                            role: "user", 
+                            content: [
+                            { 
+                                type: "text", 
+                                text: `Analysiere das Bild extrem genau. Identifiziere JEDES EINZELNE Produkt, das zu sehen ist. Wenn mehrere Produkte da sind, liste sie ALLE auf. Gib NUR JSON zurück: { "products": [{ "name": "Produktname", "expiryDate": "YYYY-MM-DD" }] }. Schätze das Datum (ca. 7-14 Tage ab heute) wenn nicht sichtbar.` 
+                            }, 
+                            { 
+                                type: "image_url", 
+                                image_url: { url: can.toDataURL('image/jpeg', 0.6) } 
+                            }
+                            ] 
+                        }
+                        ],
+                        response_format: { type: "json_object" }
                     })
                 });
 
@@ -264,19 +271,27 @@
                 }
 
                 const j = await r.json();
-                const content = j.choices[0].message.content;
                 
-                const match = content.match(/\[.*\]/s);
-                if (!match) throw new Error("Kein gültiges Format erkannt.");
+                // JSON-Parse basierend auf dem neuen Objekt-Format { "products": [...] }
+                const parsedResponse = JSON.parse(j.choices[0].message.content);
+                const items = parsedResponse.products;
                 
-                const items = JSON.parse(match[0]);
+                if (!items || items.length === 0) {
+                    throw new Error("Keine Produkte erkannt.");
+                }
                 
                 for(let item of items) {
-                    if(item.name && item.name.toLowerCase() !== "produkt") {
-                        await db.collection("inventory").add({ ...item, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                        log(`Erfasst: ${item.name}`);
-                        window.speechSynthesis.speak(new SpeechSynthesisUtterance("Check: " + item.name));
-                    }
+                    // Mappe expiryDate auf unsere mhd Variable
+                    const produktDaten = {
+                        name: item.name,
+                        mhd: item.expiryDate || 'N/A',
+                        zone: mode,
+                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    await db.collection("inventory").add(produktDaten);
+                    log(`Erfasst: ${item.name}`);
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Check: " + item.name));
                 }
                 if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             } catch(e) { 
