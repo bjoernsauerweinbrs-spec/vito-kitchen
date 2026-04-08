@@ -18,7 +18,7 @@
         #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
         .gk-title { font-size: 38px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
         .gk-input { width: 100%; max-width: 400px; background: #111; border: 2px solid var(--gold); padding: 18px; border-radius: 12px; color: #fff; font-size: 16px; text-align: center; outline: none; margin-bottom: 20px; font-family: monospace; }
-        .gk-btn { width: 100%; max-width: 400px; background: var(--gold); border: none; padding: 20px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+        .gk-btn { width: 100%; max-width: 400px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-d) 100%); border: none; padding: 20px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; }
 
         /* DASHBOARD */
         #main-app { display: none; }
@@ -39,12 +39,13 @@
 
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 11px; cursor: pointer; }
-        .stop-btn { background: #333; color: #fff; border: 1px solid #555; }
+        .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
         
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .row b { color: var(--gold); font-size: 13px; text-transform: uppercase; font-style: italic; }
         
+        /* CHEF & SHOP UI */
         .ai-panel { display: none; margin-bottom: 20px; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 15px; padding: 15px; }
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .chef-input { flex: 1; background: #000; border: 1px solid var(--neon); color: #fff; padding: 12px; border-radius: 8px; outline: none; }
@@ -81,15 +82,15 @@
                 <div id="p-text" style="padding-top:45%; text-align:center; color:#222; font-weight:900; letter-spacing:4px;">CAMERA STANDBY</div>
             </div>
             <div class="btn-grid">
-                <button id="sBtn" class="cmd-btn">Vision Scan</button>
-                <button onclick="stopCam()" class="cmd-btn stop-btn">Kamera Stop</button>
+                <button id="sBtn" onclick="toggleCamera()" class="cmd-btn">Kamera Starten</button>
+                <button id="stopBtn" onclick="stopCam()" class="cmd-btn stop-btn">Kamera Stop</button>
             </div>
         </div>
 
         <div id="ui-chef" class="ai-panel">
             <div class="input-group">
                 <input type="text" id="chef-input" class="chef-input" placeholder="Was kochen wir?">
-                <button onclick="startDictation()" style="border-radius:8px; border:none; padding:0 10px;">🎙️</button>
+                <button onclick="startDictation()" style="border-radius:8px; border:none; padding:0 10px; font-size:16px;">🎙️</button>
             </div>
             <button onclick="runChefAI()" class="cmd-btn" style="background:var(--neon);">Check & Plan</button>
             <div id="chef-out" class="ai-out"></div>
@@ -147,86 +148,127 @@
             document.getElementById('ui-scouter').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'block');
             document.getElementById('ui-chef').style.display = (mode === 'CHEF' ? 'block' : 'none');
             document.getElementById('ui-shop').style.display = (mode === 'SHOP' ? 'block' : 'none');
-            cont.innerHTML = filtered.map(i => `<div class="row"><b>${i.name}</b><span onclick="del('${i.id}')" style="color:red; cursor:pointer;">×</span></div>`).join('');
+            cont.innerHTML = filtered.map(i => `<div class="row"><b>${i.name}</b><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-size:20px;">×</span></div>`).join('');
         }
 
         async function del(id) { if(confirm("Eintrag entfernen?")) await db.collection("inventory").doc(id).delete(); }
 
         window.sm = (m) => { mode = m; render(); };
 
-        const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), laser = document.getElementById('laser');
-        let cam = false;
+        const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
+        let camActive = false;
 
-        function stopCam() {
-            if (cam && v.srcObject) {
-                v.srcObject.getTracks().forEach(track => track.stop());
-                v.style.display = "none";
-                document.getElementById('p-text').style.display = "block";
-                cam = false; log("Kamera gestoppt.");
+        async function toggleCamera() {
+            if(!camActive) {
+                // Kamera Starten
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    v.srcObject = s; 
+                    v.style.display = "block";
+                    document.getElementById('p-text').style.display = "none";
+                    camActive = true; 
+                    sBtn.innerText = "Scan Auslösen";
+                    stopBtn.style.display = "block";
+                    log("Kamera bereit.");
+                } catch(e) { log("Kamera blockiert.", true); }
+            } else {
+                // Scan auslösen
+                analyze();
             }
         }
 
-        sBtn.onclick = async () => {
-            if(!cam) {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                v.srcObject = s; v.style.display = "block";
-                document.getElementById('p-text').style.display = "none";
-                cam = true; log("Kamera aktiv.");
-            } else {
-                analyze();
+        function stopCam() {
+            if (v.srcObject) {
+                v.srcObject.getTracks().forEach(track => track.stop());
+                v.srcObject = null;
             }
-        };
+            v.style.display = "none";
+            document.getElementById('p-text').style.display = "block";
+            camActive = false;
+            sBtn.innerText = "Kamera Starten";
+            stopBtn.style.display = "none";
+            log("Kamera ausgeschaltet.");
+        }
 
         async function analyze() {
-            sBtn.disabled = true; laser.style.display = "block";
+            sBtn.disabled = true; sBtn.innerText = "Analysiere...";
+            laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
             can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             
             try {
-                log("Multi-Object-Erfassung läuft...");
+                log("Suche Produkte & Anzahl...");
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "meta-llama/llama-4-scout-17b-16e-instruct",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "Zähle ALLE sichtbaren Produkte einzeln. Wenn 3x der gleiche Becher da steht, nenne ihn 3x im Array. Sei extrem präzise. NUR JSON: { 'products': [{ 'name': '...' }] }" },
+                            { type: "text", text: "Zähle die Produkte auf dem Bild. Wenn mehrere gleiche Artikel da sind, gib die exakte Anzahl an. Gib NUR JSON zurück: { 'products': [{ 'name': 'Produktname', 'anzahl': 2 }] }" },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }
                         ]}],
                         response_format: { type: "json_object" }
                     })
                 });
+                
                 const j = await r.json();
                 const items = JSON.parse(j.choices[0].message.content).products;
+                
                 for(let item of items) {
-                    await db.collection("inventory").add({ name: item.name, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    log(`Check: ${item.name}`);
+                    let qty = parseInt(item.anzahl) || 1; // Falls KI keine Zahl liefert, nimm 1
+                    for(let i=0; i<qty; i++) {
+                        await db.collection("inventory").add({ name: item.name, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    }
+                    log(`${qty}x ${item.name} erfasst.`);
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(qty + " mal " + item.name));
                 }
-            } catch(e) { log("KI Fehler.", true); }
-            sBtn.disabled = false; laser.style.display = "none";
+            } catch(e) { log("KI Fehler beim Zählen.", true); }
+            
+            sBtn.disabled = false; sBtn.innerText = "Scan Auslösen";
+            laser.style.display = "none";
         }
 
-        async function runChefAI() {
-            const dish = document.getElementById('chef-input').value;
-            const inv = stock.map(i => i.name).join(", ");
-            const prompt = `Gericht: ${dish}. Vorrat: ${inv}. Liste Zutaten auf, sag was fehlt und schreib einen Einkaufszettel für Bad Hersfeld.`;
-            const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
-            });
-            const j = await r.json();
-            document.getElementById('chef-out').innerText = j.choices[0].message.content;
+        // --- SPRACHEINGABE ---
+        function startDictation() {
+            if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = "de-DE";
+                recognition.start();
+                log("Mikrofon aktiv...");
+                recognition.onresult = function(e) { document.getElementById('chef-input').value = e.results[0][0].transcript; log("Sprache erkannt."); };
+                recognition.onerror = function(e) { log("Mikrofon-Fehler.", true); }
+            } else { alert("Browser unterstützt kein Mikrofon. Bitte tippen."); }
         }
 
-        async function runShopAI() {
+        // --- CHEF & SHOP KI ---
+        async function fetchGroqLogic(prompt, outputElementId) {
+            const out = document.getElementById(outputElementId);
+            out.innerText = "Taktiktafel lädt...";
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
+                });
+                const j = await r.json();
+                out.innerText = j.choices[0].message.content;
+            } catch(e) { out.innerText = "Verbindungsfehler."; }
+        }
+
+        function runChefAI() {
+            const dish = document.getElementById('chef-input').value.trim();
+            if(!dish) return alert("Bitte Gericht eingeben oder einsprechen!");
+            const inv = stock.filter(i => i.zone === 'FRIDGE' || i.zone === 'PANTRY').map(i => i.name).join(", ");
+            const prompt = `Gericht: "${dish}". Vorrat: ${inv}. Liste die nötigen Zutaten auf, prüfe was da ist und schreibe einen klaren Einkaufszettel.`;
+            fetchGroqLogic(prompt, 'chef-out');
+        }
+
+        function runShopAI() {
             const shopList = stock.filter(i=>i.zone==='SHOP').map(i=>i.name).join(", ");
-            const prompt = `Einkaufsliste: ${shopList}. Wer in Bad Hersfeld (Lidl Friedloser Str, Aldi, REWE) ist heute am günstigsten? Nutze dein Wissen über lokale Angebote.`;
-            const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
-            });
-            const j = await r.json();
-            document.getElementById('shop-out').innerText = j.choices[0].message.content;
+            if(!shopList) return alert("Einkaufsliste ist leer!");
+            const prompt = `Einkaufsliste: ${shopList}. Welcher Supermarkt in Bad Hersfeld (Lidl Friedloser Str, Aldi, Rewe) ist dafür am besten? Gib eine strategische Empfehlung.`;
+            fetchGroqLogic(prompt, 'shop-out');
         }
     </script>
 </body>
