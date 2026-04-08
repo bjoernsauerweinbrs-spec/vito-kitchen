@@ -21,17 +21,18 @@
         /* GOLDEN LEGACY BRANDING */
         .legacy-branding { text-align: center; margin: 35px 0; }
         .gold-brand { 
-            font-size: 36px; font-weight: 900; font-style: italic; text-transform: uppercase;
+            font-size: 34px; font-weight: 900; font-style: italic; text-transform: uppercase;
             background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 15px rgba(212,175,55,0.4));
             letter-spacing: -1px;
+            display: block;
         }
 
-        /* TACTICAL NAVIGATION */
+        /* NAVIGATION HUB */
         .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 25px; }
         .nav-node { 
-            background: rgba(255,255,255,0.02); border: 1px solid rgba(212,175,55,0.15); 
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(212,175,55,0.2); 
             padding: 16px 0; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.3s;
         }
         .nav-node.active { 
@@ -52,8 +53,8 @@
         }
         video { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
         .scan-laser { 
-            position: absolute; width: 100%; height: 2px; background: var(--neon); top: 0; 
-            animation: scan 2.5s linear infinite; box-shadow: 0 0 15px var(--neon); z-index: 100; display: none;
+            position: absolute; width: 100%; height: 3px; background: var(--neon); top: 0; 
+            animation: scan 2s linear infinite; box-shadow: 0 0 15px var(--neon); z-index: 100; display: none;
         }
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
 
@@ -64,30 +65,27 @@
         }
 
         /* DATA DISPLAY */
-        .data-stream { 
+        .data-card { 
             background: rgba(255,255,255,0.02); border-radius: 30px; padding: 25px; 
-            border: 1px solid rgba(255,255,255,0.03); min-height: 250px;
+            border: 1px solid rgba(255,255,255,0.03); min-height: 200px;
         }
-        .stream-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.03); 
-        }
-        .stream-row b { color: var(--gold); font-style: italic; text-transform: uppercase; font-size: 14px; }
-        .mhd-tag { font-family: monospace; font-size: 10px; color: var(--neon); opacity: 0.7; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
+        .row b { color: var(--gold); font-size: 14px; text-transform: uppercase; font-style: italic; }
 
-        /* STRATEGY TERMINAL */
-        .intel-box { 
-            background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); 
-            border-radius: 20px; padding: 18px; margin-bottom: 20px; font-size: 12px; 
-            color: var(--neon); font-style: italic; line-height: 1.5; display: none;
+        /* TERMINAL */
+        .terminal { 
+            background: #000; border: 1px solid #222; border-radius: 12px; 
+            padding: 12px; font-family: monospace; font-size: 10px; color: var(--neon); 
+            height: 80px; overflow-y: auto; margin-top: 20px;
         }
+        .err { color: #ff3e3e; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="legacy-branding">
-        <div class="gold-brand">Gerd 2.0 – The Legacy</div>
-        <div style="font-size: 7px; color: var(--neon); letter-spacing: 4px; text-transform: uppercase; margin-top: 10px; opacity: 0.6;">Tactical Intelligence Unit | Hersfeld 2026</div>
+        <span class="gold-brand">Gerd 2.0 – The Legacy</span>
+        <div style="font-size: 7px; color: var(--neon); letter-spacing: 4px; text-transform: uppercase; margin-top: 10px; opacity: 0.6;">Bad Hersfeld | Tactical Command</div>
     </div>
 
     <nav class="nav-hub">
@@ -98,31 +96,32 @@
         <div onclick="sm('CHEF')" id="t-CHEF" class="nav-node">👨‍🍳<span>Chef</span></div>
     </nav>
 
-    <div id="scouter-ui" class="scouter-frame">
+    <div id="ui-scouter" class="scouter-frame">
         <div class="viewport">
             <div id="laser" class="scan-laser"></div>
             <video id="v" autoplay playsinline muted style="display:none;"></video>
-            <div id="p-text" style="padding:45% 0; text-align:center; color:#151515; font-weight:900; font-size:10px; letter-spacing:3px;">SYSTEM STANDBY</div>
+            <div id="p-text" style="padding-top:45%; text-align:center; color:#111; font-weight:900; letter-spacing:4px;">SYSTEM IDLE</div>
         </div>
-        <button id="sBtn" class="cmd-btn">Execute Multi-Scan</button>
+        <button id="sBtn" class="cmd-btn">Initiate Legacy Scan</button>
     </div>
 
-    <div class="intel-box" id="ai-intel"></div>
-
-    <div class="data-stream">
+    <div class="data-card">
         <div id="l-content"></div>
-        <div id="strategy-ops" style="display:none; margin-top:20px;">
-            <button onclick="runStrategy()" class="cmd-btn" style="background: var(--neon);">Compute Tactical Solution</button>
-        </div>
+        <button id="strategyBtn" onclick="runStrategy()" class="cmd-btn" style="display:none; background:var(--neon);">Execute Strategy</button>
+        <div id="ai-out" style="margin-top:15px; font-size:12px; color:var(--neon); font-style:italic;"></div>
     </div>
+
+    <div class="terminal" id="term">> System Command initialisiert...</div>
 
     <script>
-        const fbCfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
+        const log = (m, isE=false) => { const t = document.getElementById('term'); t.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; t.scrollTop = t.scrollHeight; };
+        
+        const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [];
 
-        if(!GRK) { GRK = prompt("Groq Tactical Key (gsk_...) erforderlich:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
+        if(!GRK) { GRK = prompt("Groq Legacy Key (gsk_...) eingeben:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
 
-        firebase.initializeApp(fbCfg);
+        firebase.initializeApp(cfg);
         const db = firebase.firestore();
 
         db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
@@ -133,24 +132,21 @@
         function render() {
             const cont = document.getElementById('l-content');
             const filtered = stock.filter(i => i.zone === mode);
-            document.getElementById('scouter-ui').style.display = (mode === 'CHEF' ? 'none' : 'block');
-            document.getElementById('strategy-ops').style.display = (mode === 'SHOP' || mode === 'CHEF' ? 'block' : 'none');
+            document.getElementById('ui-scouter').style.display = (mode === 'CHEF' ? 'none' : 'block');
+            document.getElementById('strategyBtn').style.display = (mode === 'SHOP' || mode === 'CHEF' ? 'block' : 'none');
             
             cont.innerHTML = filtered.map(i => `
-                <div class="stream-row">
+                <div class="row">
                     <b>${i.name}</b>
-                    <div style="text-align:right;">
-                        <div class="mhd-tag">${i.mhd || 'RECORDED'}</div>
-                        <span onclick="del('${i.id}')" style="color:#ff3e3e; margin-left:15px; font-size:18px;">×</span>
-                    </div>
+                    <span onclick="del('${i.id}')" style="color:#ff3e3e; font-size:20px; font-weight:bold;">×</span>
                 </div>
-            `).join('') || '<div style="text-align:center; padding:50px; color:#111; font-weight:900;">HUB EMPTY</div>';
+            `).join('') || '<div style="text-align:center; padding:30px; color:#111; font-weight:900;">HUB EMPTY</div>';
         }
 
-        async function del(id) { if(confirm("Eintrag entfernen?")) await db.collection("inventory").doc(id).delete(); }
+        async function del(id) { if(confirm("Eintrag aus Legacy entfernen?")) await db.collection("inventory").doc(id).delete(); }
 
         window.sm = (m) => {
-            mode = m; document.getElementById('ai-intel').style.display = 'none';
+            mode = m; document.getElementById('ai-out').innerText = '';
             ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m));
             render();
         };
@@ -164,60 +160,72 @@
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     v.srcObject = s; v.style.display = "block";
                     document.getElementById('p-text').style.display = "none";
-                    cam = true; sBtn.innerText = "Capture Multi-Data";
-                } catch(e) { alert("Kamera-Zugriff verweigert!"); }
+                    cam = true; sBtn.innerText = "Capture Multi-View";
+                    log("Kamera aktiv.");
+                } catch(e) { log("Kamera-Fehler: " + e.message, true); }
             } else {
                 analyze();
             }
         };
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "Processing Stream...";
+            sBtn.disabled = true; sBtn.innerText = "Processing Multi-Vision...";
             laser.style.display = "block";
-            const can = document.createElement('canvas'); can.width = 800; can.height = 800;
-            can.getContext('2d').drawImage(v, 0, 0, 800, 800);
+            const can = document.createElement('canvas'); can.width = 640; can.height = 640;
+            can.getContext('2d').drawImage(v, 0, 0, 640, 640);
+            
+            try {
+                log("Kontaktiere Groq Llama-3.2 Vision...");
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        // DAS IST DAS KORREKTE MODELL FÜR 2026
+                        model: "llama-3.2-90b-vision-preview",
+                        messages: [{ role: "user", content: [
+                            { type: "text", text: "Analysiere alle Produkte. Antworte NUR als JSON-Array: [ { 'name': '...', 'mhd': '...' } ]" },
+                            { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.5) } }
+                        ]}]
+                    })
+                });
+
+                if(!r.ok) {
+                    const err = await r.json();
+                    throw new Error(err.error.message);
+                }
+
+                const j = await r.json();
+                const items = JSON.parse(j.choices[0].message.content.match(/\[.*\]/s)[0]);
+                
+                for(let item of items) {
+                    await db.collection("inventory").add({ ...item, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    log(`Erfolgreich: ${item.name}`);
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Check: " + item.name));
+                }
+                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            } catch(e) { 
+                log("KI-FEHLER: " + e.message, true); 
+                alert("Fehler: " + e.message);
+            }
+            sBtn.disabled = false; sBtn.innerText = "Capture Multi-View";
+            laser.style.display = "none";
+        }
+
+        async function runStrategy() {
+            const out = document.getElementById('ai-out');
+            out.innerText = "Calculating Tactical Solution...";
+            const inv = stock.map(i => i.name).join(", ");
+            const p = mode === 'CHEF' ? `Bestand: ${inv}. Rezept & Einkaufs-Tipp Bad Hersfeld.` : `Einkaufsliste: ${stock.filter(i=>i.zone==='SHOP').map(i=>i.name)}. Günstigster Markt in Bad Hersfeld?`;
             
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "llama-3.2-11b-vision",
-                        messages: [{ role: "user", content: [
-                            { type: "text", text: "Multi-Scan Mode: Detect every visible product. JSON Array ONLY: [ { 'name': '...', 'mhd': '...' } ]" },
-                            { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.5) } }
-                        ]}]
-                    })
-                });
-                const j = await r.json();
-                const items = JSON.parse(j.choices[0].message.content.match(/\[.*\]/s)[0]);
-                for(let item of items) {
-                    await db.collection("inventory").add({ ...item, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Log: " + item.name));
-                }
-                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-            } catch(e) { alert("Analyse-Abbruch: Bitte Key oder Netz prüfen."); }
-            sBtn.disabled = false; sBtn.innerText = "Capture Multi-Data";
-            laser.style.display = "none";
-        }
-
-        async function runStrategy() {
-            const out = document.getElementById('ai-intel');
-            out.style.display = 'block'; out.innerText = "Calculating Tactical Response...";
-            const inv = stock.map(i => i.name).join(", ");
-            const prompt = mode === 'CHEF' 
-                ? `Inventory: ${inv}. Generate a elite recipe and shopping guide for Bad Hersfeld.`
-                : `Shopping List: ${stock.filter(i=>i.zone==='SHOP').map(i=>i.name)}. Compare Lidl, Aldi, REWE in Bad Hersfeld for the best deal.`;
-
-            try {
-                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
                 });
                 const j = await r.json();
                 out.innerText = j.choices[0].message.content;
-            } catch(e) { out.innerText = "Sync Error."; }
+            } catch(e) { out.innerText = "Netzwerk-Fehler."; }
         }
     </script>
 </body>
