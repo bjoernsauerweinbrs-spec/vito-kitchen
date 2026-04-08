@@ -4,76 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>VITO V61 ERASER</title>
+    <title>NABY KEÏTA | ELITE V62</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        /* RADIKALER FARBWECHSEL: LILA ZUR KONTROLLE */
-        body { background: #1a0033; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
-        .nuke-box { border: 2px solid #ff00ff; border-radius: 20px; padding: 20px; background: #000; box-shadow: 0 0 30px #ff00ff; }
-        .btn { width: 100%; padding: 20px; background: #ff00ff; color: #fff; border: none; border-radius: 15px; font-weight: 900; margin-top: 20px; }
-        #log { text-align: left; font-family: monospace; font-size: 10px; color: #ff00ff; margin-top: 20px; background: #000; padding: 10px; height: 100px; overflow: auto; border: 1px solid #333; }
+        :root { --neon: #00f2ff; --gold: #d4af37; --bg: #050505; }
+        body { background-color: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255,255,255,0.02); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 2.5rem; }
+        .neon-text { color: var(--neon); text-shadow: 0 0 15px rgba(0,242,255,0.5); }
+        .zone-active { background: var(--gold) !important; color: #000 !important; font-weight: 900; box-shadow: 0 0 30px rgba(212,175,55,0.4); }
+        .scan-line { height: 2px; background: var(--neon); position: absolute; width: 100%; top: 0; animation: scan 2s linear infinite; z-index: 10; box-shadow: 0 0 15px var(--neon); }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+        .log-terminal { font-family: monospace; font-size: 9px; color: var(--neon); background: rgba(0,0,0,0.4); padding: 10px; border-radius: 1rem; border: 1px solid rgba(0,242,255,0.1); height: 80px; overflow-y: auto; }
     </style>
 </head>
-<body>
+<body class="p-4 pb-32 max-w-md mx-auto">
 
     <script>
-        // SOFORTIGER SERVICE-WORKER KILL (Zwingt alte Versionen zum Sterben)
+        // SERVICE WORKER KILLER (Behält die Stabilität von V61 bei)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                for(let registration of registrations) {
-                    registration.unregister();
-                    console.log("Alter ServiceWorker gelöscht!");
-                }
-            });
+            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
         }
     </script>
 
-    <div class="nuke-box">
-        <h1 style="margin:0 italic;">VITO <span style="color:#ff00ff">V61 ERASER</span></h1>
-        <p style="font-size: 10px; opacity: 0.7;">WLAN-READY / CACHE-NUKE ACTIVE</p>
-
-        <div id="status-display" style="margin: 20px 0; font-weight: bold; color: #00ff41;">
-            PRÜFE DATENBANK...
+    <header class="flex justify-between items-start mb-8 border-l-4 border-[#00f2ff] pl-5 mt-6">
+        <div>
+            <h1 class="text-3xl font-black italic uppercase leading-none tracking-tighter">VITO <br><span class="neon-text text-2xl">COMMAND</span></h1>
+            <p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-1">BAD HERSFELD | TACTICAL HUB V62</p>
         </div>
+        <div class="text-right glass p-3 px-5 border-[#d4af37]/20">
+            <div id="db-status" class="text-[9px] font-black uppercase text-green-500">System Live ●</div>
+            <div id="temp" class="text-2xl font-black italic tracking-tighter">4.0°C</div>
+        </div>
+    </header>
 
-        <video id="v" autoplay playsinline muted style="width:100%; border-radius: 15px; display:none; border: 1px solid #ff00ff;"></video>
-        <button id="sBtn" class="btn">SCANNER STARTEN</button>
-        
-        <div id="log">Lade System...</div>
+    <div class="grid grid-cols-3 gap-2 mb-8">
+        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="py-4 glass text-[10px] font-black zone-active uppercase">🧊 Kühl</button>
+        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="py-4 glass text-[10px] font-black text-gray-600 uppercase">❄️ Frost</button>
+        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="py-4 glass text-[10px] font-black text-gray-600 uppercase">📦 Vorrat</button>
+    </div>
+
+    <div class="glass p-5 mb-8 relative overflow-hidden">
+        <div class="relative w-full aspect-square bg-black rounded-[2rem] overflow-hidden border border-white/5">
+            <div id="laser" class="hidden scan-line"></div>
+            <video id="vid" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
+            <canvas id="canv" class="hidden"></canvas>
+            <div id="placeholder" class="h-full flex flex-col items-center justify-center opacity-30">
+                <div class="text-5xl mb-4">🧿</div>
+                <div class="text-[10px] font-black uppercase tracking-widest">Scouter Ready</div>
+            </div>
+        </div>
+        <button id="sBtn" class="w-full py-5 mt-6 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-[0_0_40px_rgba(0,242,255,0.2)] active:scale-95 transition-all">Einheit Erfassen</button>
+    </div>
+
+    <div class="glass p-6 min-h-[250px] mb-4">
+        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+            <h3 id="zLabel" class="text-[11px] font-black text-[#d4af37] uppercase italic tracking-widest text-lg">Bestand: Kühl</h3>
+            <button onclick="localStorage.removeItem('GRK'); location.reload();" class="text-[8px] text-red-500 font-bold uppercase underline">Key Reset</button>
+        </div>
+        <div id="inventory-list" class="space-y-4"></div>
+    </div>
+
+    <div id="log-term" class="log-terminal">
+        > System initialisiert...<br>
     </div>
 
     <script>
-        const logger = document.getElementById('log');
-        function write(msg) { logger.innerHTML += "<br>> " + msg; }
-
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
+        let GRK = localStorage.getItem('GRK'), cz = 'FRIDGE', stock = [];
 
-        try {
-            firebase.initializeApp(cfg);
-            const db = firebase.firestore();
-            write("Firebase-Verbindung OK.");
-            
-            db.collection("inventory").limit(1).onSnapshot(() => {
-                document.getElementById('status-display').innerText = "HUB IN BAD HERSFELD LIVE ●";
-                write("Datenstrom stabil.");
-            });
-        } catch(e) { write("Fehler: " + e.message); }
+        function write(m) { const l = document.getElementById('log-term'); l.innerHTML += `> ${m}<br>`; l.scrollTop = l.scrollHeight; }
 
-        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn');
-        let camOn = false;
+        if(!GRK) { GRK = prompt("VITO SECURITY: Groq Key eingeben:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
+
+        firebase.initializeApp(cfg);
+        const db = firebase.firestore();
+
+        db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
+            stock = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            write(`${stock.length} Einheiten synchronisiert.`);
+            render();
+        });
+
+        function render() {
+            const filtered = stock.filter(i => i.zone === cz);
+            document.getElementById('inventory-list').innerHTML = filtered.map(i => `
+                <div class="flex justify-between items-center py-3 border-b border-white/5">
+                    <span class="font-black text-white uppercase italic text-sm">${i.name}</span>
+                    <span class="text-[10px] text-[#d4af37] font-mono font-bold">${i.mhd || 'OFFEN'}</span>
+                </div>
+            `).join('') || '<div class="text-center py-10 text-gray-800 font-black text-[10px] uppercase">Zentrale Leer</div>';
+        }
+
+        const vid = document.getElementById('vid'), sBtn = document.getElementById('sBtn');
+        let active = false;
 
         sBtn.onclick = async () => {
-            if(!camOn) {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                vid.srcObject = s; vid.style.display = "block";
-                camOn = true; sBtn.innerText = "JETZT SCANNEN";
-                write("Kamera aktiviert.");
+            if(!active) {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    vid.srcObject = s; vid.classList.remove('hidden');
+                    document.getElementById('placeholder').classList.add('hidden');
+                    active = true; sBtn.innerText = "Analyse Einleiten";
+                    write("Kamera aktiv.");
+                } catch(e) { alert("Fehler: Kamera verweigert."); }
             } else {
-                write("KI-Analyse (Groq) wird eingeleitet...");
+                analyze();
             }
+        };
+
+        async function analyze() {
+            sBtn.disabled = true; sBtn.innerText = "KI PRÜFT...";
+            document.getElementById('laser').classList.remove('hidden');
+            const canv = document.getElementById('canv'); canv.width = 640; canv.height = 640;
+            canv.getContext('2d').drawImage(vid, 0, 0, 640, 640);
+            
+            try {
+                write("Sende Daten an Groq Llama-Vision...");
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "llama-3.2-11b-vision-preview",
+                        messages: [{ role: "user", content: [
+                            { type: "text", text: "Analysiere das Bild. Antworte NUR im JSON Format: { 'name': 'Produktname', 'mhd': 'Datum' }. Keine Einleitung." },
+                            { type: "image_url", image_url: { url: canv.toDataURL('image/jpeg', 0.6) } }
+                        ]}]
+                    })
+                });
+                const j = await res.json();
+                const d = JSON.parse(j.choices[0].message.content.match(/\{.*\}/s)[0]);
+                write(`Erfolg: ${d.name} erfasst.`);
+                await db.collection("inventory").add({ ...d, zone: cz, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                if(navigator.vibrate) navigator.vibrate(100);
+            } catch(e) { write("KI-FEHLER: Key prüfen!"); }
+            sBtn.disabled = false; sBtn.innerText = "Einheit Erfassen";
+            document.getElementById('laser').classList.add('hidden');
+        }
+
+        window.setZone = (z) => {
+            cz = z;
+            document.getElementById('zLabel').innerText = "Bestand: " + (z=='FRIDGE'?'Kühl':z=='FREEZER'?'Frost':'Vorrat');
+            ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('btn-'+id)?.classList.toggle('zone-active', id === z));
+            render();
         };
     </script>
 </body>
