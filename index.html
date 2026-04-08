@@ -3,98 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VITO V58 GHOST BUSTER</title>
+    <title>VITO V59 FINAL</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        /* KEIN EXTERN-CSS: ALLES HIER DRIN */
-        body { background: #000; color: #00f2ff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; }
-        .vito-header { border-left: 5px solid #00f2ff; padding: 10px; text-align: left; margin-bottom: 20px; background: rgba(0,242,255,0.05); }
-        .vito-card { border: 1px solid #333; border-radius: 20px; padding: 15px; background: #0a0a0a; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .btn { width: 100%; padding: 18px; background: #00f2ff; color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; }
-        .btn:active { background: #008891; }
-        .log-box { font-family: monospace; font-size: 9px; color: #444; text-align: left; background: #050505; padding: 10px; border-radius: 10px; height: 80px; overflow-y: scroll; border: 1px solid #111; }
-        .inv-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #111; font-size: 13px; text-transform: uppercase; font-style: italic; }
-        .mhd-label { color: #d4af37; font-weight: bold; }
-        #v { width: 100%; border-radius: 15px; display: none; margin-bottom: 10px; }
+        /* ABSOLUT STABILES DESIGN */
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; }
+        .box { border: 2px solid #ffee00; border-radius: 20px; padding: 20px; background: #0a0a0a; margin-bottom: 20px; }
+        .neon-yellow { color: #ffee00; font-weight: 900; text-transform: uppercase; font-style: italic; }
+        .btn { width: 100%; padding: 20px; background: #ffee00; color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 16px; cursor: pointer; }
+        .log-display { background: #111; color: #666; font-family: monospace; font-size: 10px; padding: 10px; border-radius: 10px; text-align: left; height: 100px; overflow-y: auto; margin-top: 10px; border: 1px solid #222; }
+        #v { width: 100%; border-radius: 15px; display: none; margin-bottom: 15px; background: #111; aspect-ratio: 1/1; object-fit: cover; }
+        .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="vito-header">
-        <h1 style="margin:0; font-style: italic; letter-spacing: -1px;">VITO <span style="color:#fff">COMMAND</span></h1>
-        <div style="font-size: 9px; font-weight: bold; opacity: 0.5;">BAD HERSFELD | BUILD V58.0-ELITE</div>
+    <div class="box">
+        <h1 style="margin:0;">VITO <span class="neon-yellow">COMMAND</span></h1>
+        <div style="font-size: 10px; opacity: 0.5;">BAD HERSFELD | VERSION 59.0 FINAL</div>
     </div>
 
-    <div class="vito-card">
-        <div id="cam-placeholder" style="padding: 40px 0; color: #222; font-weight: 900; font-size: 10px; letter-spacing: 3px;">SCOUTER STANDBY</div>
+    <div class="box">
         <video id="v" autoplay playsinline muted></video>
+        <div id="p-text" style="color:#333; font-weight: 900; padding: 20px;">SCOUTER BEREIT</div>
         <canvas id="c" style="display:none;"></canvas>
-        <button id="sBtn" class="btn">Einheit Erfassen</button>
+        <button id="sBtn" class="btn">EINHEIT ERFASSEN</button>
     </div>
 
-    <div class="vito-card" style="text-align: left;">
-        <div style="color: #d4af37; font-size: 11px; font-weight: 900; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Bestand Kühlzentrale</div>
-        <div id="inv-list" style="color: #888; font-size: 11px;">Synchronisiere mit Bad Hersfeld...</div>
+    <div class="box" style="text-align: left;">
+        <div class="neon-yellow" style="font-size: 12px; margin-bottom: 10px;">Bestand Zentrale:</div>
+        <div id="inv-list">Suche Verbindung...</div>
     </div>
 
-    <div class="log-box" id="vito-log">
-        [12:47] System-Start eingeleitet...<br>
+    <div class="log-display" id="debug-log">
+        [SYSTEM START]...<br>
     </div>
 
-    <button onclick="localStorage.removeItem('GRK'); location.reload();" style="background:none; border:none; color: #333; font-size: 8px; margin-top: 20px; text-decoration: underline;">API-KEY RESET</button>
+    <button onclick="localStorage.removeItem('GRK'); location.reload();" style="color:#333; background:none; border:none; font-size:9px; text-decoration: underline; margin-top:10px;">API KEY RESET</button>
 
     <script>
-        const vLog = (m) => { document.getElementById('vito-log').innerHTML += `> ${m}<br>`; console.log(m); };
+        const dLog = (m) => { document.getElementById('debug-log').innerHTML += `> ${m}<br>`; };
         
         const fbCfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
 
         let GRK = localStorage.getItem('GRK');
         if(!GRK) {
-            vLog("Warte auf Key-Eingabe...");
-            GRK = prompt("VITO MASTER KEY (Groq) erforderlich:");
+            dLog("Key-Abfrage gestartet.");
+            GRK = prompt("VITO LOGIN: Bitte Groq API Key eingeben:");
             if(GRK) localStorage.setItem('GRK', GRK.trim());
         }
 
         try {
             firebase.initializeApp(fbCfg);
             const db = firebase.firestore();
-            vLog("Firebase aktiv.");
+            dLog("Firebase-Zentrale verbunden.");
 
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
                 const items = snap.docs.map(d => d.data());
-                vLog(`${items.length} Einheiten synchronisiert.`);
+                dLog(`${items.length} Produkte im Bestand.`);
                 document.getElementById('inv-list').innerHTML = items.map(i => `
-                    <div class="inv-item">
+                    <div class="item">
                         <span>${i.name}</span>
-                        <span class="mhd-label">${i.mhd || 'OFFEN'}</span>
+                        <span style="color:#ffee00">${i.mhd || 'OFFEN'}</span>
                     </div>
-                `).join('') || "Zentrale leer.";
-            }, err => vLog("DB-Fehler: " + err.message));
+                `).join('') || "Keine Einträge.";
+            }, err => dLog("DB-FEHLER: " + err.message));
 
-        } catch (e) { vLog("Fehler: " + e.message); }
+        } catch (e) { dLog("CRITICAL INIT ERROR: " + e.message); }
 
-        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn');
+        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn'), pText = document.getElementById('p-text');
         let camOn = false;
 
         sBtn.onclick = async () => {
             if(!camOn) {
-                vLog("Kamera-Anfrage...");
+                dLog("Kamera-Zugriff angefordert...");
                 try {
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     vid.srcObject = s; vid.style.display = "block";
-                    document.getElementById('cam-placeholder').style.display = "none";
-                    camOn = true; sBtn.innerText = "Scan auslösen";
-                    vLog("Kamera bereit.");
-                } catch(e) { vLog("Kamera-Fehler: " + e.message); }
+                    pText.style.display = "none";
+                    camOn = true; sBtn.innerText = "JETZT SCANNEN";
+                    dLog("Scouter ist LIVE.");
+                } catch(e) { dLog("KAMERA-FEHLER: " + e.message); }
             } else {
-                analyze();
+                runScan();
             }
         };
 
-        async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "KI ANALYSE...";
-            vLog("Sende Bild an Groq...");
+        async function runScan() {
+            sBtn.disabled = true; sBtn.innerText = "KI PRÜFT...";
+            dLog("Sende Daten an Groq...");
             const can = document.getElementById('c'); can.width = 640; can.height = 640;
             can.getContext('2d').drawImage(vid, 0, 0, 640, 640);
             
@@ -111,12 +109,15 @@
                     })
                 });
                 const j = await res.json();
-                const d = JSON.parse(j.choices[0].message.content.match(/\{.*\}/s)[0]);
-                vLog(`Erfasst: ${d.name}`);
+                const content = j.choices[0].message.content;
+                const d = JSON.parse(content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1));
+                
+                dLog(`KI-Erfolg: ${d.name} erkannt.`);
                 await firebase.firestore().collection("inventory").add({ ...d, zone: "FRIDGE", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch(e) { vLog("KI-Fehler: " + e.message); }
-            sBtn.disabled = false; sBtn.innerText = "Scan auslösen";
+            } catch(e) { dLog("KI-FEHLER: " + e.message); alert("Key prüfen!"); }
+            
+            sBtn.disabled = false; sBtn.innerText = "JETZT SCANNEN";
         }
     </script>
 </body>
