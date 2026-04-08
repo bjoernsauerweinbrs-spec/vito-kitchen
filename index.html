@@ -3,27 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NABY KEÏTA HUB V83 | FINAL</title>
+    <title>VITO MASTER V85</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --neon: #00f2ff; --gold: #d4af37; --bg: #050505; --card: rgba(255,255,255,0.03); }
         body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; overflow-x: hidden; }
+        
+        /* PROFESSIONELLER HEADER */
         .header { display: flex; justify-content: space-between; align-items: center; margin: 15px 0 25px; border-left: 4px solid var(--neon); padding-left: 15px; }
+        .header h1 { margin: 0; font-size: 22px; font-style: italic; text-transform: uppercase; letter-spacing: -1px; }
+        .status-led { font-size: 9px; font-weight: 900; color: #00ff41; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* NAVIGATION */
         .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 20px; }
         .nav-btn { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px 0; color: #444; font-size: 7px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
         .nav-active { background: var(--neon) !important; color: #000 !important; font-weight: 900; }
-        .scouter { background: var(--card); border-radius: 2rem; padding: 15px; border: 1px solid rgba(0,242,255,0.1); margin-bottom: 20px; position: relative; }
+
+        /* SCOUTER UNIT */
+        .scouter { background: var(--card); border-radius: 2rem; padding: 15px; border: 1px solid rgba(0,242,255,0.1); margin-bottom: 20px; position: relative; transition: background 0.3s; }
+        .scouter-success { background: rgba(0,255,65,0.1) !important; border-color: #00ff41 !important; }
         .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 1.5rem; overflow: hidden; position: relative; border: 1px solid #111; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .laser { position: absolute; width: 100%; height: 2px; background: var(--neon); top: 0; animation: scan 2s linear infinite; z-index: 10; display: none; box-shadow: 0 0 15px var(--neon); }
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
+        
         .action-btn { width: 100%; background: var(--neon); color: #000; border: none; padding: 18px; border-radius: 1.2rem; font-weight: 900; font-size: 13px; text-transform: uppercase; margin-top: 15px; cursor: pointer; }
+
+        /* DATA CARDS */
         .card { background: var(--card); border-radius: 2rem; padding: 20px; border: 1px solid rgba(255,255,255,0.03); min-height: 250px; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #0d0d0d; }
+        .card-h { color: var(--gold); font-size: 11px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #111; padding-bottom: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #0d0d0d; }
         .row b { font-style: italic; text-transform: uppercase; font-size: 13px; }
+        .tag { font-family: monospace; font-size: 10px; color: var(--gold); background: rgba(212,175,55,0.1); padding: 3px 8px; border-radius: 5px; }
+
+        /* INTELLIGENCE BOX */
         .ai-box { background: rgba(0,242,255,0.05); border: 1px solid var(--neon); border-radius: 1.5rem; padding: 15px; margin-bottom: 15px; font-size: 11px; color: #00f2ff; line-height: 1.4; font-style: italic; display: none; }
-        .terminal { background: #000; border-radius: 1rem; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; border: 1px solid #222; }
+        .terminal { background: #000; border-radius: 1rem; padding: 10px; font-family: monospace; font-size: 8px; color: #00f2ff; height: 50px; overflow-y: auto; margin-top: 15px; border: 1px solid #222; }
     </style>
 </head>
 <body>
@@ -31,9 +47,9 @@
     <header class="header">
         <div>
             <h1 style="font-style: italic;">NABY KEÏTA <span style="color:var(--neon)">HUB</span></h1>
-            <div style="font-size:7px; color:#444; letter-spacing:3px; text-transform:uppercase;">Master Legacy V83.0 | 2026</div>
+            <div style="font-size:7px; color:#444; letter-spacing:3px; text-transform:uppercase;">Bad Hersfeld Tactical V85.0</div>
         </div>
-        <div id="led" style="font-size: 9px; font-weight: 900; color: #ff3e3e;">SYNC ●</div>
+        <div id="led" class="status-led">SYNC ●</div>
     </header>
 
     <nav class="nav-grid">
@@ -48,31 +64,20 @@
         <div class="viewport">
             <div id="laser" class="laser"></div>
             <video id="v" autoplay playsinline muted style="display:none;"></video>
-            <div id="p-text" style="padding:45% 0; text-align:center; color:#111; font-weight:900; font-size:10px; letter-spacing:4px;">MULTI-VISION READY</div>
+            <div id="p-text" style="padding-top:45%; color:#151515; font-weight:900; font-size:10px; letter-spacing:4px; text-align:center;">AI MULTI-VISION READY</div>
         </div>
-        <button id="sBtn" class="action-btn">Multi-Erfassung Starten</button>
+        <button id="sBtn" class="action-btn">Scan Einleitung</button>
     </div>
 
     <div class="card">
         <div id="ai-output" class="ai-box"></div>
-        
-        <div id="chef-controls" style="display:none; margin-bottom:20px;">
-            <select id="theme" class="nav-btn" style="width:100%; color:#fff; padding:10px; margin-bottom:10px;">
-                <option value="Italienisch">Italienisch</option>
-                <option value="Asiatisch">Asiatisch</option>
-                <option value="Kino/Snacks">Kino & Snacks</option>
-            </select>
-            <button onclick="runStrategy('CHEF')" class="action-btn" style="background:var(--gold);">Rezept berechnen</button>
+        <div id="intelligence-controls" style="display:none; margin-bottom:20px;">
+            <button onclick="runAI('STRATEGY')" class="action-btn" style="background:var(--gold);">Bad Hersfeld Strategie berechnen</button>
         </div>
-
-        <div id="shop-controls" style="display:none; margin-bottom:20px;">
-            <button onclick="runStrategy('SHOP')" class="action-btn" style="background:var(--gold);">Bad Hersfeld Preis-Check</button>
-        </div>
-
         <div id="l-content"></div>
     </div>
 
-    <div class="terminal" id="term">> System-Check Bad Hersfeld...</div>
+    <div class="terminal" id="term">> System-Check bereit...</div>
 
     <script>
         const log = (m) => { const t = document.getElementById('term'); t.innerHTML += `<br>> ${m}`; t.scrollTop = t.scrollHeight; };
@@ -80,7 +85,7 @@
         
         let GRK = localStorage.getItem('GRK'), curM = 'FRIDGE', stock = [];
 
-        if(!GRK) { GRK = prompt("Groq Key eingeben:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
+        if(!GRK) { GRK = prompt("Groq/Llama Key erforderlich:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
 
         firebase.initializeApp(cfg);
         const db = firebase.firestore();
@@ -88,18 +93,23 @@
         db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
             stock = s.docs.map(d => ({id: d.id, ...d.data()}));
             document.getElementById('led').style.color = "#00ff41";
-            document.getElementById('led').innerText = "LIVE ●";
             render();
         });
 
         function render() {
             const cont = document.getElementById('l-content');
             const filtered = stock.filter(i => i.zone === curM);
-            document.getElementById('chef-controls').style.display = (curM === 'CHEF' ? 'block' : 'none');
-            document.getElementById('shop-controls').style.display = (curM === 'SHOP' ? 'block' : 'none');
-            document.getElementById('scouter-ui').style.display = (curM === 'CHEF' ? 'none' : 'block');
+            document.getElementById('intelligence-controls').style.display = (curM === 'SHOP' || curM === 'CHEF' ? 'block' : 'none');
             
-            cont.innerHTML = filtered.map(i => `<div class="row"><b>${i.name}</b><span onclick="del('${i.id}')" style="color:#ff3e3e;">×</span></div>`).join('') || '<div style="text-align:center; padding:30px; color:#111; font-size:10px;">BEREIT</div>';
+            cont.innerHTML = filtered.map(i => `
+                <div class="row">
+                    <b>${i.name}</b>
+                    <div style="display:flex; align-items:center;">
+                        <span class="tag">${i.mhd || 'INFO'}</span>
+                        <span onclick="del('${i.id}')" style="color:#ff3e3e; margin-left:15px; font-size:18px;">×</span>
+                    </div>
+                </div>
+            `).join('') || '<div style="text-align:center; padding:50px; color:#111; font-weight:900;">BILDERFASSUNG BEREIT</div>';
         }
 
         async function del(id) { if(confirm("Löschen?")) await db.collection("inventory").doc(id).delete(); }
@@ -110,7 +120,7 @@
             ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('nav-active', t === m));
         };
 
-        const v = document.getElementById('v'), sBtn = document.getElementById('sBtn');
+        const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), scouter = document.getElementById('scouter-ui');
         let cam = false;
 
         sBtn.onclick = async () => {
@@ -118,27 +128,26 @@
                 const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 v.srcObject = s; v.style.display = "block";
                 document.getElementById('p-text').style.display = "none";
-                cam = true; log("Kamera gestartet.");
+                cam = true; sBtn.innerText = "MULTI-SCAN AUSLÖSEN";
             } else {
                 analyze();
             }
         };
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "KI SCANNT MULTI-PRODUKTE...";
+            sBtn.disabled = true; sBtn.innerText = "KI ANALYSE...";
             document.getElementById('laser').style.display = "block";
-            const can = document.createElement('canvas'); can.width = 700; can.height = 700;
-            can.getContext('2d').drawImage(v, 0, 0, 700, 700);
+            const can = document.createElement('canvas'); can.width = 800; can.height = 800;
+            can.getContext('2d').drawImage(v, 0, 0, 800, 800);
             
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        // DAS NEUE STABILE MODELL
                         model: "llama-3.2-11b-vision",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "Erkenne alle Produkte. Antworte NUR als JSON-Array: [ { 'name': '...', 'mhd': '...' } ]" },
+                            { type: "text", text: "Analysiere alle Produkte im Bild. Antworte NUR als JSON-Array: [ { 'name': 'Produktname', 'mhd': 'Datum/Info' } ]" },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.5) } }
                         ]}]
                     })
@@ -148,22 +157,24 @@
                 
                 for(let item of items) {
                     await db.collection("inventory").add({ ...item, zone: curM, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    log(`ERFASST: ${item.name}`);
-                    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Check: " + item.name));
+                    log(`CHECK: ${item.name}`);
+                    scouter.classList.add('scouter-success');
+                    setTimeout(() => scouter.classList.remove('scouter-success'), 500);
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Erfasst: " + item.name));
                 }
                 if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             } catch(e) { log("FEHLER: " + e.message); }
-            sBtn.disabled = false; sBtn.innerText = "Multi-Erfassung Starten";
+            sBtn.disabled = false; sBtn.innerText = "MULTI-SCAN AUSLÖSEN";
             document.getElementById('laser').style.display = "none";
         }
 
-        async function runStrategy(type) {
+        async function runAI(type) {
             const out = document.getElementById('ai-output');
-            out.style.display = 'block'; out.innerText = "KI berechnet Strategie...";
+            out.style.display = 'block'; out.innerText = "Strategie wird berechnet...";
             const inv = stock.map(i => i.name).join(", ");
-            const prompt = type === 'CHEF' 
-                ? `Thema: ${document.getElementById('theme').value}. Bestand: ${inv}. Gib ein kurzes Rezept und die Einkaufsliste für Bad Hersfeld.`
-                : `Einkaufsliste: ${stock.filter(i => i.zone === 'SHOP').map(i => i.name).join(', ')}. Wo in Bad Hersfeld (Lidl Friedloser Str, Aldi, REWE Erfurter Str) ist es gerade am günstigsten?`;
+            const prompt = curM === 'CHEF' 
+                ? `Du bist der Naby Keïta Chef-Berater. Basierend auf diesem Vorrat: ${inv}, schlage Nadine ein schnelles Rezept (Italienisch oder Asiatisch) vor und sag, was sie noch einkaufen muss.`
+                : `Analysiere die Einkaufsliste: ${stock.filter(i=>i.zone==='SHOP').map(i=>i.name)}. Wer in Bad Hersfeld (Lidl Friedloser Str, Aldi Nord, REWE Erfurter Str) hat dafür die besten Preise?`;
 
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -173,7 +184,7 @@
                 });
                 const j = await r.json();
                 out.innerText = j.choices[0].message.content;
-            } catch(e) { out.innerText = "Fehler bei Strategie-Berechnung."; }
+            } catch(e) { out.innerText = "Strategie-Fehler."; }
         }
     </script>
 </body>
