@@ -3,67 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NABY KEÏTA COMMAND | V50 MASTER</title>
+    <title>VITO DIAGNOSTIC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --neon: #00f2ff; --gold: #d4af37; }
-        body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); }
-        .neon-border { border-left: 4px solid var(--neon); }
-        .zone-active { background: var(--gold) !important; color: #000 !important; font-weight: 900; box-shadow: 0 0 20px rgba(212,175,55,0.3); }
-        .status-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        body { background-color: #000; color: #fff; font-family: sans-serif; }
+        .error-log { color: #ff4b4b; font-family: monospace; font-size: 10px; padding: 20px; border: 1px solid #333; margin: 20px; border-radius: 10px; background: #110000; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="p-4 pb-32 max-w-md mx-auto">
+<body>
 
-    <header class="flex justify-between items-start mb-8 neon-border pl-4 mt-4">
-        <div>
-            <h1 class="text-2xl font-black italic uppercase leading-none tracking-tighter">NABY KEÏTA <br><span style="color:var(--neon)">COMMAND</span></h1>
-            <p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.3em] mt-1">BAD HERSFELD | HUB V50.0</p>
-        </div>
-        <div class="text-right glass p-3 rounded-2xl border border-white/10">
-            <div id="status" class="text-[9px] font-black uppercase text-red-500 status-pulse">SYSTEM OFFLINE ●</div>
-            <div id="temp" class="text-xl font-black italic tracking-tighter">4.0°C</div>
-        </div>
-    </header>
-
-    <div class="grid grid-cols-3 gap-2 mb-8">
-        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="py-4 glass rounded-2xl text-[10px] font-black zone-active uppercase">🧊 Kühl</button>
-        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="py-4 glass rounded-2xl text-[10px] font-black text-gray-500 uppercase">❄️ Frost</button>
-        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="py-4 glass rounded-2xl text-[10px] font-black text-gray-500 uppercase">📦 Vorrat</button>
+    <div id="debug-display" class="hidden">
+        <h2 class="text-red-500 font-black p-5 uppercase">Tactical Error Detected:</h2>
+        <div id="error-content" class="error-log"></div>
     </div>
 
-    <div class="glass p-5 rounded-[2.5rem] mb-8 relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#00f2ff] to-transparent opacity-20"></div>
-        <div class="relative w-full aspect-square bg-black rounded-3xl overflow-hidden flex items-center justify-center border border-white/5">
-            <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
-            <canvas id="canvas" class="hidden"></canvas>
-            <div id="placeholder" class="text-center">
-                <div class="text-gray-800 text-4xl mb-2">📸</div>
-                <div class="text-gray-700 font-black text-[10px] uppercase tracking-widest">Scouter Standby</div>
+    <div id="main-app" class="p-4 opacity-0 transition-opacity duration-500">
+        <header class="flex justify-between items-start mb-8 border-l-4 border-[#00f2ff] pl-4 mt-4">
+            <div>
+                <h1 class="text-2xl font-black italic uppercase leading-none">NABY KEÏTA <br><span class="text-[#00f2ff]">COMMAND</span></h1>
+                <p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.3em] mt-1">BAD HERSFELD | DIAGNOSTIC V50.1</p>
             </div>
-        </div>
-        <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-[0_0_30px_rgba(0,242,255,0.2)] active:scale-95 transition-all">Analyse Starten</button>
-    </div>
+            <div class="text-right glass p-3 rounded-2xl">
+                <div id="status" class="text-[9px] font-black uppercase text-red-500">BOOTING ●</div>
+                <div id="temp" class="text-xl font-black italic">4.0°C</div>
+            </div>
+        </header>
 
-    <div class="glass p-6 rounded-[2.5rem] min-h-[300px]">
-        <div class="flex justify-between items-center mb-6">
-            <h3 id="zoneTitle" class="text-[11px] font-black text-[#d4af37] uppercase italic tracking-widest">Bestand: Kühl</h3>
-            <button onclick="resetKeys()" class="text-[8px] border border-red-500/50 text-red-500 px-3 py-1.5 rounded-full font-black uppercase tracking-tighter">API Reset</button>
-        </div>
-        <div id="list" class="space-y-4">
-            <div class="animate-pulse flex space-y-4 flex-col">
-                <div class="h-4 bg-white/5 rounded w-3/4"></div>
-                <div class="h-4 bg-white/5 rounded w-1/2"></div>
-            </div>
+        <div class="glass p-10 rounded-[2.5rem] text-center text-gray-500 uppercase font-black text-[10px] tracking-widest">
+            Initialisiere taktische Schnittstelle...
         </div>
     </div>
 
     <script>
-        // CONFIGURATION: Unabhängig vom Google Account
+        // ERROR CATCHER: Schreibt Fehler direkt auf die Website
+        window.onerror = function(msg, url, line) {
+            document.getElementById('debug-display').classList.remove('hidden');
+            document.getElementById('error-content').innerText = "MSG: " + msg + "\nLINE: " + line;
+            return false;
+        };
+
+        console.log("VITO: Startet System-Check...");
+
         const fbConfig = { 
             apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", 
             authDomain: "gen-lang-client-0348637849.firebaseapp.com", 
@@ -73,126 +56,29 @@
             appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" 
         };
 
-        let GRK = localStorage.getItem('GRK');
-        if (!GRK) {
-            GRK = prompt("VITO LOGIN: Bitte Groq API Key eingeben:");
-            if (GRK) localStorage.setItem('GRK', GRK.trim());
-        }
+        try {
+            firebase.initializeApp(fbConfig);
+            const db = firebase.firestore();
+            console.log("VITO: Firebase verbunden.");
 
-        function resetKeys() { localStorage.removeItem('GRK'); location.reload(); }
-
-        firebase.initializeApp(fbConfig);
-        const db = firebase.firestore();
-        let curZone = 'FRIDGE', camActive = false, stock = [];
-
-        function initHub() {
-            db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
-                stock = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('status').innerText = "System Online ●";
-                document.getElementById('status').className = "text-[9px] font-black uppercase text-green-500";
-                render();
-            });
-            db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
-                if(doc.exists) document.getElementById('temp').innerText = doc.data().temp + "°C";
-            });
-        }
-
-        function render() {
-            const filtered = stock.filter(i => i.zone === curZone);
-            const container = document.getElementById('list');
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-gray-800 font-black text-[10px] uppercase">Zone Leer</div>`;
-                return;
-            }
-            container.innerHTML = filtered.map(item => `
-                <div class="flex justify-between items-center py-4 border-b border-white/5 animate-fadeIn">
-                    <div>
-                        <div class="font-black text-white uppercase italic text-sm tracking-tighter">${item.name}</div>
-                        <div class="text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">${curZone} UNIT</div>
-                    </div>
-                    <div class="text-[10px] text-[#d4af37] font-mono bg-[#d4af37]/5 px-3 py-1.5 rounded-lg border border-[#d4af37]/10 uppercase italic">
-                        ${item.mhd || 'OFFEN'}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn');
-
-        sBtn.addEventListener('click', async () => {
-            if (!camActive) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    video.srcObject = stream;
-                    video.classList.remove('hidden');
-                    document.getElementById('placeholder').classList.add('hidden');
-                    camActive = true;
-                    sBtn.innerText = "Produkt erfassen";
-                } catch(err) { alert("Kamera-Fehler: Bitte Zugriff erlauben."); }
-            } else {
-                captureAndAnalyze();
-            }
-        });
-
-        async function captureAndAnalyze() {
-            sBtn.disabled = true;
-            sBtn.innerText = "KI ANALYSE LÄUFT...";
-            const canvas = document.getElementById('canvas');
-            canvas.width = 640; canvas.height = 640;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 640, 640);
-            const b64 = canvas.toDataURL('image/jpeg', 0.8);
-
-            try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "llama-3.2-11b-vision-preview",
-                        messages: [{
-                            role: "user",
-                            content: [
-                                { type: "text", text: "Analysiere das Bild. Antworte NUR im JSON Format: { 'name': 'Produktname', 'mhd': 'MHD' }. Keine Prosa." },
-                                { type: "image_url", image_url: { url: b64 } }
-                            ]
-                        }],
-                        temperature: 0.1
-                    })
-                });
-
-                const json = await res.json();
-                if (json.choices) {
-                    const content = json.choices[0].message.content;
-                    const data = JSON.parse(content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1));
-                    
-                    await db.collection("inventory").add({
-                        ...data,
-                        zone: curZone,
-                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                    const speech = new SpeechSynthesisUtterance("Erfasst: " + data.name);
-                    speech.lang = 'de-DE';
-                    window.speechSynthesis.speak(speech);
+            // Wenn alles okay ist, App einblenden
+            setTimeout(() => {
+                document.getElementById('main-app').classList.remove('opacity-0');
+                document.getElementById('status').innerText = "Online ●";
+                document.getElementById('status').classList.remove('text-red-500');
+                document.getElementById('status').classList.add('text-green-500');
+                
+                // Hier den Key abfragen, falls nicht da
+                if (!localStorage.getItem('GRK')) {
+                    const key = prompt("VITO LOGIN: Groq API Key eingeben:");
+                    if (key) localStorage.setItem('GRK', key.trim());
                 }
-            } catch (e) {
-                alert("Scan-Fehler: " + e.message);
-            }
-            sBtn.disabled = false;
-            sBtn.innerText = "Produkt erfassen";
+            }, 1000);
+
+        } catch (e) {
+            document.getElementById('debug-display').classList.remove('hidden');
+            document.getElementById('error-content').innerText = "FIREBASE INIT ERROR: " + e.message;
         }
-
-        window.setZone = (z) => {
-            curZone = z;
-            document.getElementById('zoneTitle').innerText = "Bestand: " + (z==='FRIDGE'?'Kühl':z==='FREEZER'?'Frost':'Vorrat');
-            ['FRIDGE','FREEZER','PANTRY'].forEach(id => {
-                document.getElementById('z-'+id).classList.toggle('zone-active', id === z);
-            });
-            render();
-        };
-
-        initHub();
     </script>
 </body>
 </html>
