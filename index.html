@@ -3,44 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VITO HUB SENTINEL V68</title>
+    <title>NABY KEÏTA HUB V70</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --neon: #00f2ff; --gold: #d4af37; --bg: #050505; --card: rgba(255,255,255,0.03); }
-        body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 15px; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 15px; overflow-x: hidden; }
         
-        /* HEADER DESIGN */
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; margin-bottom: 30px; border-left: 4px solid var(--neon); padding-left: 15px; }
-        .header h1 { margin: 0; font-size: 26px; font-style: italic; text-transform: uppercase; letter-spacing: -1px; line-height: 0.9; }
-        .header .sub { font-size: 8px; color: #444; text-transform: uppercase; letter-spacing: 3px; margin-top: 5px; }
-        .status-pill { background: var(--card); border: 1px solid rgba(212,175,55,0.2); padding: 8px 15px; border-radius: 1rem; text-align: right; backdrop-filter: blur(10px); }
-        .status-led { font-size: 9px; font-weight: 900; color: #ff3e3e; text-transform: uppercase; }
+        /* PROFESSIONELLER HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 30px; border-left: 4px solid var(--neon); padding-left: 15px; }
+        .header h1 { margin: 0; font-size: 24px; font-style: italic; text-transform: uppercase; letter-spacing: -1px; }
+        .status-pill { background: var(--card); border: 1px solid rgba(212,175,55,0.2); padding: 8px 15px; border-radius: 1rem; text-align: right; }
+        .status-led { font-size: 9px; font-weight: 900; color: #00ff41; text-transform: uppercase; }
 
-        /* INTERFACE */
-        .zones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 25px; }
-        .zone-btn { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 15px 0; color: #555; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-        .zone-active { background: var(--gold); color: #000; border: none; box-shadow: 0 0 25px rgba(212,175,55,0.3); }
+        /* NAVIGATION */
+        .nav-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-bottom: 20px; }
+        .nav-btn { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px 0; color: #555; font-size: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .nav-active { background: var(--gold) !important; color: #000 !important; border: none; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
 
-        /* AI VISUALIZER */
-        .scouter-frame { background: var(--card); border-radius: 2.5rem; padding: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 25px; position: relative; }
-        .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 2rem; overflow: hidden; border: 1px solid #111; position: relative; }
+        /* SCANNER UNIT */
+        .scouter { background: var(--card); border-radius: 2rem; padding: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; text-align: center; }
+        .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 1.5rem; overflow: hidden; position: relative; border: 1px solid #111; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-anim { position: absolute; width: 100%; height: 2px; background: var(--neon); top: 0; animation: scan 2s linear infinite; box-shadow: 0 0 15px var(--neon); z-index: 10; display: none; }
+        .scan-line { position: absolute; width: 100%; height: 2px; background: var(--neon); top: 0; animation: scan 2s linear infinite; z-index: 10; display: none; box-shadow: 0 0 15px var(--neon); }
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
+        
+        .action-btn { width: 100%; background: var(--neon); color: #000; border: none; padding: 18px; border-radius: 1.2rem; font-weight: 900; font-size: 13px; text-transform: uppercase; margin-top: 15px; cursor: pointer; }
 
-        .action-btn { width: 100%; background: var(--neon); color: #000; border: none; padding: 22px; border-radius: 1.5rem; font-weight: 900; font-size: 15px; text-transform: uppercase; margin-top: 15px; cursor: pointer; box-shadow: 0 0 30px rgba(0,242,255,0.2); }
-        .action-btn:disabled { opacity: 0.5; }
+        /* LISTS */
+        .data-card { background: var(--card); border-radius: 2rem; padding: 20px; border: 1px solid rgba(255,255,255,0.03); min-height: 250px; }
+        .list-header { color: var(--gold); font-size: 10px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #111; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #0d0d0d; }
+        .item-row b { font-style: italic; text-transform: uppercase; font-size: 13px; }
+        .item-mhd { font-family: monospace; font-size: 10px; color: var(--gold); background: rgba(212,175,55,0.05); padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(212,175,55,0.1); }
+        
+        .del-btn { color: #ff3e3e; font-size: 18px; padding-left: 10px; cursor: pointer; }
 
-        /* DATABASE LIST */
-        .inventory { background: var(--card); border-radius: 2.5rem; padding: 25px; border: 1px solid rgba(255,255,255,0.03); min-height: 200px; }
-        .list-title { color: var(--gold); font-size: 11px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #111; padding-bottom: 15px; margin-bottom: 15px; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #0d0d0d; }
-        .item-info b { font-style: italic; text-transform: uppercase; font-size: 14px; letter-spacing: -0.5px; }
-        .item-tag { font-family: monospace; font-size: 10px; color: var(--gold); background: rgba(212,175,55,0.05); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.1); }
+        /* SHOPPING LIST SPECIFIC */
+        .shop-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
+        .check-box { width: 20px; height: 20px; border: 2px solid var(--neon); border-radius: 5px; margin-right: 15px; }
 
-        /* DEBUG CONSOLE */
-        .console { font-family: monospace; font-size: 9px; color: #333; margin-top: 20px; text-align: left; padding: 10px; height: 50px; overflow-y: scroll; border-top: 1px solid #111; }
+        .console { font-family: monospace; font-size: 8px; color: #333; margin-top: 15px; text-align: left; height: 40px; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -48,85 +51,108 @@
     <header class="header">
         <div>
             <h1>VITO <span style="color:var(--neon)">COMMAND</span></h1>
-            <div class="sub">BAD HERSFELD | SENTINEL V68.0</div>
+            <div style="font-size:8px; color:#444; letter-spacing:2px; text-transform:uppercase;">Bad Hersfeld | V70.0</div>
         </div>
         <div class="status-pill">
-            <div id="led" class="status-led">HUB OFFLINE ●</div>
-            <div id="temp" style="font-weight:900; font-style:italic; font-size:20px;">4.0°C</div>
+            <div id="led" class="status-led">Syncing ●</div>
+            <div id="temp" style="font-weight:900; font-style:italic; font-size:18px;">4.0°C</div>
         </div>
     </header>
 
-    <div class="zones">
-        <button onclick="sz('FRIDGE')" id="z-FRIDGE" class="zone-btn zone-active">Kühl</button>
-        <button onclick="sz('FREEZER')" id="z-FREEZER" class="zone-btn">Frost</button>
-        <button onclick="sz('PANTRY')" id="z-PANTRY" class="zone-btn">Vorrat</button>
-    </div>
+    <nav class="nav-tabs">
+        <button onclick="st('FRIDGE')" id="t-FRIDGE" class="nav-btn nav-active">Kühl</button>
+        <button onclick="st('FREEZER')" id="t-FREEZER" class="nav-btn">Frost</button>
+        <button onclick="st('PANTRY')" id="t-PANTRY" class="nav-btn">Vorrat</button>
+        <button onclick="st('SHOP')" id="t-SHOP" class="nav-btn">Einkauf</button>
+    </nav>
 
-    <div class="scouter-frame">
+    <div id="scanner-section" class="scouter">
         <div class="viewport">
-            <div id="laser" class="scan-anim"></div>
+            <div id="laser" class="scan-line"></div>
             <video id="v" autoplay playsinline muted style="display:none;"></video>
-            <div id="p-text" style="padding-top:45%; text-align:center; color:#151515; font-weight:900; font-size:10px; letter-spacing:4px;">SCOUTER STANDBY</div>
+            <div id="p-text" style="padding-top:45%; color:#151515; font-weight:900; font-size:10px; letter-spacing:3px;">AI SCOUTER READY</div>
         </div>
-        <button id="sBtn" class="action-btn">Scanner Aktivieren</button>
+        <button id="sBtn" class="action-btn">Einheit Scannen</button>
     </div>
 
-    <div class="inventory">
-        <div class="list-title">ZENTRALE: <span id="cur-z" style="color:#fff">KÜHL</span></div>
-        <div id="l-content" style="color:#222; font-size:10px; text-align:center; padding-top:20px;">Warte auf Datenstrom...</div>
+    <div class="data-card">
+        <div class="list-header">
+            <span id="list-title">Bestand: Kühl</span>
+            <span onclick="localStorage.removeItem('GRK'); location.reload();" style="font-size:7px; color:#333; text-decoration:underline;">RESET KEY</span>
+        </div>
+        <div id="l-content"></div>
     </div>
 
-    <div id="cons" class="console">> System-Check bereit...</div>
+    <div id="c-log" class="console">> System-Check...</div>
 
     <script>
-        const out = (m) => { const c = document.getElementById('cons'); c.innerHTML += `<br>> ${m}`; c.scrollTop = c.scrollHeight; };
-        
+        const log = (m) => { const c = document.getElementById('c-log'); c.innerHTML = `> ${m}`; };
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
-        let GRK = localStorage.getItem('GRK'), cz = 'FRIDGE', stock = [];
+        
+        let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [];
 
-        if(!GRK) { GRK = prompt("Groq API Key (gsk_...) erforderlich:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
+        if(!GRK) { GRK = prompt("Groq Key erforderlich:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
 
-        // FIREBASE START
-        try {
-            firebase.initializeApp(cfg);
-            const db = firebase.firestore();
-            out("Schnittstelle stabil.");
-            
-            db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
-                stock = s.docs.map(d => d.data());
-                document.getElementById('led').innerText = "HUB LIVE ●";
-                document.getElementById('led').style.color = "#00ff41";
-                render();
-            }, e => out("Sync-Error: " + e.message));
+        firebase.initializeApp(cfg);
+        const db = firebase.firestore();
 
-            db.collection("telemetry").doc("fridge_stats").onSnapshot(d => {
-                if(d.exists) document.getElementById('temp').innerText = d.data().temp + "°C";
-            });
-        } catch(e) { out("Init-Fehler: " + e.message); }
+        // REALTIME SYNC
+        db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
+            stock = s.docs.map(d => ({id: d.id, ...d.data()}));
+            document.getElementById('led').style.color = "#00ff41";
+            document.getElementById('led').innerText = "Hub Live ●";
+            render();
+        });
 
         function render() {
-            const f = stock.filter(i => i.zone === cz);
-            document.getElementById('l-content').innerHTML = f.map(i => `
+            const cont = document.getElementById('l-content');
+            const filtered = stock.filter(i => i.zone === mode);
+            
+            if (mode === 'SHOP') {
+                document.getElementById('scanner-section').style.display = 'none';
+                cont.innerHTML = filtered.map(i => `
+                    <div class="shop-row">
+                        <div class="check-box" onclick="removeItem('${i.id}')"></div>
+                        <b style="text-transform:uppercase;">${i.name}</b>
+                    </div>
+                `).join('') || '<div style="text-align:center; padding:40px; color:#111; font-weight:900;">LISTE LEER</div>';
+                return;
+            }
+
+            document.getElementById('scanner-section').style.display = 'block';
+            cont.innerHTML = filtered.map(i => `
                 <div class="item-row">
                     <div class="item-info"><b>${i.name}</b></div>
-                    <div class="item-tag">${i.mhd || 'OFFEN'}</div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="item-mhd">${i.mhd || 'OFFEN'}</div>
+                        <div class="del-btn" onclick="removeItem('${i.id}')">×</div>
+                    </div>
                 </div>
-            `).join('') || '<div style="padding:40px; color:#111; font-weight:900;">ZONE LEER</div>';
+            `).join('') || '<div style="text-align:center; padding:40px; color:#111; font-weight:900;">ZONE LEER</div>';
         }
 
-        // CAMERA LOGIC
+        async function removeItem(id) {
+            if(confirm("Löschen?")) await db.collection("inventory").doc(id).delete();
+        }
+
+        // NAVIGATION
+        window.st = (m) => {
+            mode = m;
+            document.getElementById('list-title').innerText = (m==='SHOP'?'Einkaufsliste':'Bestand: ' + m);
+            ['FRIDGE','FREEZER','PANTRY','SHOP'].forEach(t => document.getElementById('t-'+t).classList.toggle('nav-active', t === m));
+            render();
+        };
+
+        // SCANNER LOGIC
         const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn');
         let cam = false;
 
         sBtn.onclick = async () => {
             if(!cam) {
-                try {
-                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    vid.srcObject = s; vid.style.display = "block";
-                    document.getElementById('p-text').style.display = "none";
-                    cam = true; sBtn.innerText = "Einheit Analysieren";
-                    out("Kamera aktiviert.");
-                } catch(e) { alert("Kamera-Fehler!"); out(e.message); }
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                vid.srcObject = s; vid.style.display = "block";
+                document.getElementById('p-text').style.display = "none";
+                cam = true; sBtn.innerText = "Produkt Erfassen";
             } else {
                 analyze();
             }
@@ -139,35 +165,27 @@
             canv.getContext('2d').drawImage(vid, 0, 0, 640, 640);
             
             try {
-                out("Llama-3.2-Vision kontaktiert...");
-                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "llama-3.2-11b-vision-preview",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'MHD' }" },
+                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'Datum' }" },
                             { type: "image_url", image_url: { url: canv.toDataURL('image/jpeg', 0.6) } }
                         ]}]
                     })
                 });
-                const j = await r.json();
+                const j = await res.json();
                 const d = JSON.parse(j.choices[0].message.content.match(/\{.*\}/s)[0]);
-                out(`Erfolg: ${d.name} erfasst.`);
-                await firebase.firestore().collection("inventory").add({ ...d, zone: cz, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                await db.collection("inventory").add({ ...d, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                log(`Erfasst: ${d.name}`);
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch(e) { out("Analyse-Fehler!"); }
+            } catch(e) { log("KI-FEHLER!"); }
             
-            sBtn.disabled = false; sBtn.innerText = "Einheit Analysieren";
+            sBtn.disabled = false; sBtn.innerText = "Produkt Erfassen";
             document.getElementById('laser').style.display = "none";
         }
-
-        window.sz = (z) => {
-            cz = z;
-            document.getElementById('cur-z').innerText = (z=='FRIDGE'?'KÜHL':z=='FREEZER'?'FROST':'VORRAT');
-            ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('z-'+id).classList.toggle('zone-active', id === z));
-            render();
-        };
     </script>
 </body>
 </html>
