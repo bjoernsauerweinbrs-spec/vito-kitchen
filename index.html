@@ -3,108 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NABY KEÏTA | MASTER SCAN V54</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>VITO V55 ULTRA</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --vito-green: #00ff41; --vito-dark: #0a0a0a; }
-        body { background-color: var(--vito-dark); color: #fff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .vito-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,255,65,0.1); border-radius: 2rem; }
-        .btn-prime { background: var(--vito-green); color: #000; font-weight: 900; text-transform: uppercase; border-radius: 1.5rem; transition: all 0.2s; }
-        .btn-prime:active { transform: scale(0.95); box-shadow: 0 0 20px rgba(0,255,65,0.4); }
-        .scan-anim { height: 2px; background: var(--vito-green); position: absolute; width: 100%; top: 0; animation: scan 2s linear infinite; box-shadow: 0 0 10px var(--vito-green); }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        /* RADIKALES NEUES DESIGN: SIGNAL-GELB statt Blau/Grün */
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 15px; }
+        .header { border-bottom: 2px solid #ffee00; padding-bottom: 10px; margin-bottom: 20px; }
+        .version { color: #ffee00; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .scouter { width: 100%; aspect-ratio: 1/1; background: #111; border: 1px solid #333; border-radius: 20px; overflow: hidden; position: relative; }
+        video { width: 100%; height: 100%; object-cover: cover; }
+        .btn { width: 100%; padding: 20px; background: #ffee00; color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 16px; margin-top: 15px; text-transform: uppercase; }
+        .list-item { border-bottom: 1px solid #222; padding: 12px 0; display: flex; justify-content: space-between; }
+        .mhd { color: #ffee00; font-family: monospace; }
+        #error-out { color: red; font-size: 10px; margin-top: 10px; }
     </style>
 </head>
-<body class="p-4 pb-24">
+<body>
 
-    <div class="flex justify-between items-center mb-6 bg-green-500/5 p-4 rounded-3xl border border-green-500/10">
-        <div>
-            <h1 class="text-xl font-black italic uppercase tracking-tighter">VITO <span class="text-[#00ff41]">MASTER</span></h1>
-            <p class="text-[7px] font-bold text-green-500/50 uppercase tracking-[0.4em]">DEPLOYMENT ID: V54.0-FINAL</p>
-        </div>
-        <div class="text-right">
-            <div id="status" class="text-[9px] font-black text-green-500 animate-pulse uppercase">HUB ONLINE ●</div>
-            <div id="temp" class="text-lg font-black italic">4.0°C</div>
-        </div>
+    <div class="header">
+        <h1 style="margin:0; font-style: italic;">NABY <span style="color:#ffee00">KEÏTA</span></h1>
+        <div class="version">DEPLOYMENT: V55.0-ULTRA-STABLE</div>
     </div>
 
-    <div class="grid grid-cols-3 gap-2 mb-6">
-        <button onclick="sz('FRIDGE')" id="z-FRIDGE" class="py-3 vito-card text-[9px] font-black border-[#00ff41] text-[#00ff41] uppercase">Kühl</button>
-        <button onclick="sz('FREEZER')" id="z-FREEZER" class="py-3 vito-card text-[9px] font-black text-gray-600 uppercase">Frost</button>
-        <button onclick="sz('PANTRY')" id="z-PANTRY" class="py-3 vito-card text-[9px] font-black text-gray-600 uppercase">Vorrat</button>
+    <div class="scouter" id="scouter-box">
+        <video id="v" autoplay playsinline muted style="display:none;"></video>
+        <div id="p-text" style="padding-top: 45%; text-align: center; color: #444; font-size: 10px;">KAMERA STANDBY</div>
+        <canvas id="c" style="display:none;"></canvas>
     </div>
 
-    <div class="vito-card p-4 mb-6 relative overflow-hidden">
-        <div class="relative aspect-square bg-black rounded-[1.5rem] overflow-hidden border border-white/5">
-            <div id="s-line" class="hidden scan-anim"></div>
-            <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
-            <canvas id="c" class="hidden"></canvas>
-            <div id="p-hold" class="h-full flex flex-col items-center justify-center opacity-20">
-                <span class="text-4xl mb-2">📸</span>
-                <span class="text-[8px] font-black uppercase tracking-widest">Warte auf Freigabe...</span>
-            </div>
-        </div>
-        <button id="sBtn" class="w-full py-5 mt-4 btn-prime text-sm">Scanner Aktivieren</button>
-    </div>
+    <button id="sBtn" class="btn">Scanner Starten</button>
 
-    <div class="vito-card p-6 min-h-[200px]">
-        <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-            <span id="zTitle" class="text-[10px] font-black text-[#00ff41] uppercase italic">Bestand: Kühl</span>
-            <button onclick="rk()" class="text-[7px] text-red-500 font-bold uppercase underline">Reset Key</button>
-        </div>
-        <div id="l" class="space-y-3"></div>
+    <div id="error-out"></div>
+
+    <div style="margin-top: 30px;">
+        <div style="color:#ffee00; font-size: 11px; font-weight: bold; margin-bottom: 10px;">AKTUELLER BESTAND:</div>
+        <div id="inv-list">Warte auf Datenbank...</div>
     </div>
 
     <script>
+        // CONFIG
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
-        let GRK = localStorage.getItem('GRK'), cz = 'FRIDGE', cam = false, data = [];
+        let GRK = localStorage.getItem('GRK');
+        
+        // Error Handler
+        window.onerror = (m) => { document.getElementById('error-out').innerText = "SYSTEM ERROR: " + m; };
 
-        if(!GRK) { GRK = prompt("NEUER GROQ KEY ERFORDERLICH:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
-        function rk() { localStorage.removeItem('GRK'); location.reload(); }
+        // Key Check
+        if(!GRK) { 
+            GRK = prompt("VITO MASTER KEY (Groq) eingeben:"); 
+            if(GRK) localStorage.setItem('GRK', GRK.trim()); 
+        }
 
+        // Init Firebase
         firebase.initializeApp(cfg);
         const db = firebase.firestore();
 
-        function sync() {
-            db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
-                data = s.docs.map(d => ({id: d.id, ...d.data()}));
-                draw();
-            });
-            db.collection("telemetry").doc("fridge_stats").onSnapshot(d => {
-                if(d.exists) document.getElementById('temp').innerText = d.data().temp + "°C";
-            });
-        }
-
-        function draw() {
-            const f = data.filter(i => i.zone === cz);
-            document.getElementById('l').innerHTML = f.map(i => `
-                <div class="flex justify-between items-center py-2 border-b border-white/5">
-                    <span class="font-black text-white uppercase text-xs">${i.name}</span>
-                    <span class="text-[9px] font-mono text-[#00ff41] bg-green-500/10 px-2 py-1 rounded">${i.mhd || 'OFFEN'}</span>
+        // Sync List
+        db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
+            const list = s.docs.map(d => d.data());
+            document.getElementById('inv-list').innerHTML = list.map(i => `
+                <div class="list-item">
+                    <span>${i.name}</span>
+                    <span class="mhd">${i.mhd || 'OFFEN'}</span>
                 </div>
-            `).join('') || '<div class="text-center py-10 text-gray-800 font-black text-[8px] uppercase">Zone Leer</div>';
-        }
-
-        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn');
-
-        sBtn.addEventListener('click', async () => {
-            if(!cam) {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                vid.srcObject = s; vid.classList.remove('hidden');
-                document.getElementById('p-hold').classList.add('hidden');
-                cam = true; sBtn.innerText = "Produkt Scannen";
-            } else { 
-                analyze();
-            }
+            `).join('') || 'Keine Daten in Bad Hersfeld.';
         });
 
+        // Camera Logic
+        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn'), pText = document.getElementById('p-text');
+        let camActive = false;
+
+        sBtn.onclick = async () => {
+            if(!camActive) {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    vid.srcObject = s;
+                    vid.style.display = "block";
+                    pText.style.display = "none";
+                    camActive = true;
+                    sBtn.innerText = "PRODUKT SCANNEN";
+                } catch(e) { alert("Kamera-Fehler: " + e.message); }
+            } else {
+                analyze();
+            }
+        };
+
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "KI ANALYSE...";
-            document.getElementById('s-line').classList.remove('hidden');
-            const can = document.getElementById('c'); can.width = 600; can.height = 600;
-            can.getContext('2d').drawImage(vid, 0, 0, 600, 600);
+            sBtn.disabled = true; sBtn.innerText = "KI PRÜFT...";
+            const can = document.getElementById('c');
+            can.width = 640; can.height = 640;
+            can.getContext('2d').drawImage(vid, 0, 0, 640, 640);
             
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -113,28 +102,21 @@
                     body: JSON.stringify({
                         model: "llama-3.2-11b-vision-preview",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'Datum' }" },
+                            { type: "text", text: "Analysiere das Bild. Antworte NUR im JSON Format: { 'name': 'Produkt', 'mhd': 'MHD' }. Keine Prosa." },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.6) } }
                         ]}]
                     })
                 });
                 const j = await r.json();
-                const d = JSON.parse(j.choices[0].message.content);
-                await db.collection("inventory").add({ ...d, zone: cz, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                const content = j.choices[0].message.content;
+                const d = JSON.parse(content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1));
+                
+                await db.collection("inventory").add({ ...d, zone: "FRIDGE", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 window.speechSynthesis.speak(new SpeechSynthesisUtterance("Erfasst: " + d.name));
-            } catch(e) { alert("Fehler: Key ungültig oder Netz-Problem."); }
-            sBtn.disabled = false; sBtn.innerText = "Produkt Scannen";
-            document.getElementById('s-line').classList.add('hidden');
+            } catch(e) { alert("KI-Fehler: Bitte Key prüfen."); }
+            
+            sBtn.disabled = false; sBtn.innerText = "PRODUKT SCANNEN";
         }
-
-        window.sz = (z) => {
-            cz = z;
-            document.getElementById('zTitle').innerText = "Bestand: " + (z=='FRIDGE'?'Kühl':z=='FREEZER'?'Frost':'Vorrat');
-            ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('z-'+id).style.borderColor = (id==z ? '#00ff41' : 'rgba(255,255,255,0.05)'));
-            draw();
-        };
-
-        sync();
     </script>
 </body>
 </html>
