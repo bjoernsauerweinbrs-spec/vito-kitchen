@@ -35,6 +35,17 @@
         <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600">📦 Vorrat</button>
     </div>
 
+    <section class="glass p-5 rounded-[2.5rem] mb-6 border border-[#00f2ff]/20">
+        <div class="flex items-center gap-4">
+            <button id="vBtn" class="w-16 h-16 bg-[#111] rounded-full text-2xl flex items-center justify-center border border-gray-800 active:scale-95 shadow-lg shadow-[#00f2ff]/20">🎙️</button>
+            <div class="flex-1">
+                <h3 class="text-xs font-black neon-text uppercase tracking-widest">Kitchen Chef</h3>
+                <p id="aiMsg" class="text-[10px] text-gray-400 italic font-medium">"Nadine, was kochen wir heute?"</p>
+            </div>
+        </div>
+        <div id="recipeBox" class="hidden mt-4 p-5 bg-black/80 rounded-3xl border border-gray-900 text-xs italic text-white"></div>
+    </section>
+
     <div class="glass p-5 rounded-[2.5rem] mb-6">
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-gray-900 flex items-center justify-center">
             <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
@@ -71,7 +82,7 @@
                 document.getElementById('dbStatus').innerText = "Online ●";
                 document.getElementById('dbStatus').className = "text-[9px] font-black uppercase text-[#00ff41] status-blink";
                 render();
-            }, err => { alert("DB Fehler: " + err.message); });
+            }, err => { console.error("Firebase Error:", err); });
             
             db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
                 if(doc.exists) document.getElementById('liveTemp').innerText = doc.data().temp + "°C";
@@ -88,7 +99,26 @@
             `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Leer</p>';
         }
 
-        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn');
+        const video = document.getElementById('v'), sBtn = document.getElementById('sBtn'), aiMsg = document.getElementById('aiMsg');
+
+        // REZEPT-BERATUNG
+        document.getElementById('vBtn').addEventListener('click', async () => {
+            if(!GK || allStock.length === 0) return;
+            aiMsg.innerText = "VITO prüft Bestand...";
+            try {
+                const names = allStock.map(i => i.name).join(', ');
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Bestand: ${names}. Schlage Nadine 1 schnelles Gericht vor. Nenne kurz 2 Zutaten die fehlen.` }] }] })
+                });
+                const d = await res.json();
+                const text = d.candidates[0].content.parts[0].text;
+                document.getElementById('recipeBox').classList.remove('hidden');
+                document.getElementById('recipeBox').innerText = text;
+                aiMsg.innerText = "Guten Appetit!";
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+            } catch (e) { aiMsg.innerText = "Fehler!"; }
+        });
 
         sBtn.addEventListener('click', async () => {
             if (!camOn) {
@@ -102,24 +132,22 @@
         });
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "COMMAND ANALYSE...";
+            sBtn.disabled = true; sBtn.innerText = "VITO ANALYSE...";
             const canvas = document.getElementById('canvas');
             canvas.width = 640; canvas.height = 480;
             canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
             const b64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
             
             try {
-                // HIER IST DER FIX: v1 statt v1beta
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GK}`, {
+                // FIX: v1beta + gemini-1.5-flash
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`;
+                const res = await fetch(url, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ contents: [{ parts: [{ text: "Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }] })
                 });
                 const d = await res.json();
                 
-                if (d.error) { 
-                    alert("GOOGLE-MELDUNG: " + d.error.message); 
-                    return; 
-                }
+                if (d.error) { alert("GOOGLE-MELDUNG: " + d.error.message); return; }
 
                 const raw = d.candidates[0].content.parts[0].text;
                 const data = JSON.parse(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
