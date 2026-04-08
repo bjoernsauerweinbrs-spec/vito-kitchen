@@ -22,7 +22,7 @@
         .nav-node.active span { color: #000; font-weight: 900; }
         .nav-node span { font-size: 7px; text-transform: uppercase; display: block; margin-top: 5px; color: #888; }
 
-        /* SCANNER FRAME */
+        /* SCANNER & UI */
         .scouter-frame { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.2); border-radius: 20px; padding: 15px; position: relative; margin-bottom: 20px; }
         .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 15px; overflow: hidden; position: relative; }
         video { width: 100%; height: 100%; object-fit: cover; }
@@ -30,26 +30,21 @@
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
 
         /* BUTTONS */
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 18px; border-radius: 15px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
+        .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 15px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
         .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
-        .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
+        
+        /* MANUAL INPUT FORM */
+        .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
+        .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 10px; font-size: 12px; outline: none; }
 
         /* DATA CARDS */
-        .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; margin-bottom: 20px; }
+        .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
-        .row b { color: var(--gold); font-size: 13px; text-transform: uppercase; font-weight: 900; font-style: italic; }
-        .row-meta { font-family: monospace; font-size: 10px; color: var(--neon); margin-top: 3px; }
-        .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
-        
-        /* SHOP & CHEF */
-        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .chef-input { width: 100%; background: #000; border: 1px solid var(--neon); color: #fff; padding: 15px; border-radius: 12px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
-        .recipe-box { margin-top: 15px; font-size: 12px; line-height: 1.6; color: #eee; white-space: pre-wrap; }
-        .shop-check { width: 20px; height: 20px; margin-right: 15px; accent-color: #00ff41; }
-        .item-checked { text-decoration: line-through; opacity: 0.4; }
+        .qty-badge { background: #333; color: var(--gold); padding: 3px 6px; border-radius: 5px; font-size: 11px; margin-right: 8px; border: 1px solid var(--gold); }
+        .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 10px; width: 60px; padding: 2px; border-radius: 4px; text-align: center; }
 
-        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 50px; overflow-y: auto; }
+        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 50px; overflow-y: auto; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -79,31 +74,28 @@
                 <video id="v" autoplay playsinline muted style="display:none;"></video>
                 <div id="p-text" style="padding-top:45%; text-align:center; color:#222; font-weight:900; letter-spacing:4px;">CAMERA STANDBY</div>
             </div>
-            <div class="btn-grid">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
                 <button id="sBtn" onclick="toggleCamera()" class="cmd-btn">Kamera Starten</button>
                 <button id="stopBtn" onclick="stopCam()" class="cmd-btn stop-btn">Kamera Stop</button>
             </div>
         </div>
 
         <div id="ui-chef" class="ai-panel">
-            <input type="text" id="chef-input" class="chef-input" placeholder="Wunschgericht...">
-            <div style="font-size:11px; margin-bottom:10px;">
-                <input type="checkbox" id="extraordinary"> Außergewöhnlich/Asiatisch
-            </div>
-            <button onclick="runKaroChef()" class="cmd-btn">Strategie & Rezept</button>
-            <div id="chef-out" class="recipe-box"></div>
+            <input type="text" id="chef-input" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:#fff; border:1px solid var(--neon); border-radius:10px;" placeholder="Wunschgericht...">
+            <button onclick="runKaroChef()" class="cmd-btn">Rezept & Preise</button>
+            <div id="chef-out" style="font-size:12px; margin-top:15px; white-space:pre-wrap;"></div>
         </div>
 
         <div id="ui-shop" class="ai-panel">
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 iPhone</button>
-                <button onclick="finishShopping()" class="cmd-btn" style="background:#00ff41; color:#000;">✅ Gekauft</button>
-            </div>
-            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Hersfeld Radar</button>
-            <div id="shop-out" class="recipe-box"></div>
+            <button onclick="runShopAI()" class="cmd-btn">Hersfeld Radar</button>
+            <div id="shop-out" style="font-size:12px; margin-top:15px; white-space:pre-wrap;"></div>
         </div>
 
-        <button id="voice-trigger-btn" onclick="toggleSmartEntnahme()" class="voice-btn">🎙️ Smarte Entnahme (Sprechen)</button>
+        <div class="manual-add" id="manual-form">
+            <input type="text" id="manual-name" class="manual-input" placeholder="Produktname (z.B. Milch)">
+            <input type="text" id="manual-qty" class="manual-input" style="max-width:40px;" placeholder="1">
+            <button onclick="addManual()" class="cmd-btn" style="width:auto; padding:0 15px;">+</button>
+        </div>
 
         <div class="data-card">
             <div id="l-content"></div>
@@ -114,7 +106,7 @@
 
     <script>
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
-        let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db, currentRecognition = null, isListening = false;
+        let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db;
 
         if (GRK) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initFirebase(); }
         function saveKey() { const i = document.getElementById('api-input').value; if(i) { localStorage.setItem('GRK', i); location.reload(); } }
@@ -129,56 +121,58 @@
             const cont = document.getElementById('l-content');
             const filtered = stock.filter(i => i.zone === mode);
             document.getElementById('ui-scouter').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'block');
+            document.getElementById('manual-form').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'flex');
             document.getElementById('ui-chef').style.display = (mode === 'CHEF' ? 'block' : 'none');
             document.getElementById('ui-shop').style.display = (mode === 'SHOP' ? 'block' : 'none');
             
-            cont.innerHTML = filtered.map(i => {
-                const isChecked = i.checked ? 'checked' : '';
-                const checkClass = i.checked ? 'item-checked' : '';
-                const checkHTML = mode === 'SHOP' ? `<input type="checkbox" class="shop-check" ${isChecked} onchange="toggleCheck('${i.id}', this.checked)">` : '';
-                return `
+            cont.innerHTML = filtered.map(i => `
                 <div class="row">
                     <div style="display:flex; align-items:center;">
-                        ${checkHTML}
                         <span class="qty-badge">${i.qty || 1}x</span>
                         <div style="display:flex; flex-direction:column;">
-                            <b class="${checkClass}">${i.name}</b>
-                            <span class="row-meta">MHD: ${i.mhd || '?'}</span>
+                            <b style="color:var(--gold); font-size:13px;">${i.name}</b>
+                            <input type="text" class="mhd-edit" value="${i.mhd || '?'}" onchange="updateMHD('${i.id}', this.value)" placeholder="MHD?">
                         </div>
                     </div>
                     <span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-weight:bold; font-size:20px;">×</span>
-                </div>`;
-            }).join('') || '<div style="text-align:center; padding:20px; color:#333;">EMPTY</div>';
+                </div>
+            `).join('') || '<div style="text-align:center; padding:20px; color:#333;">EMPTY</div>';
         }
 
+        async function updateMHD(id, val) { await db.collection("inventory").doc(id).update({ mhd: val }); }
         async function del(id) { if(confirm("Löschen?")) await db.collection("inventory").doc(id).delete(); }
-        async function toggleCheck(id, c) { await db.collection("inventory").doc(id).update({ checked: c }); }
+        async function addManual() {
+            const n = document.getElementById('manual-name').value;
+            const q = parseInt(document.getElementById('manual-qty').value) || 1;
+            if(n) {
+                await db.collection("inventory").add({ name: n, qty: q, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp(), mhd: '?' });
+                document.getElementById('manual-name').value = '';
+            }
+        }
+
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
-        // --- KAMERA LOGIK ---
+        // --- KAMERA & AI ---
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
         let camActive = false;
 
         async function toggleCamera() {
             if(!camActive) {
-                try {
-                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    v.srcObject = s; v.style.display = "block";
-                    document.getElementById('p-text').style.display = "none";
-                    camActive = true; sBtn.innerText = "Scan Auslösen"; stopBtn.style.display = "block";
-                    log("Kamera bereit.");
-                } catch(e) { log("Kamera Fehler.", true); }
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                v.srcObject = s; v.style.display = "block";
+                document.getElementById('p-text').style.display = "none";
+                camActive = true; sBtn.innerText = "Scan Auslösen"; stopBtn.style.display = "block";
             } else { analyze(); }
         }
 
         function stopCam() {
-            if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
+            if (v.srcObject) v.srcObject.getTracks().forEach(t => t.stop());
             v.style.display = "none"; document.getElementById('p-text').style.display = "block";
             camActive = false; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none";
         }
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "Scanning..."; laser.style.display = "block";
+            sBtn.disabled = true; laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
             can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             try {
@@ -187,7 +181,7 @@
                     body: JSON.stringify({
                         model: "meta-llama/llama-4-scout-17b-16e-instruct",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "Zähle Produkte. Lies MHD. Gib NUR JSON: { 'products': [{ 'name': '...', 'anzahl': 2, 'mhd': '...' }] }" },
+                            { type: "text", text: "Analysiere alle Produkte (auch im Hintergrund!). Erkenne Anzahl und versuche das MHD zu lesen. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 2, 'mhd': '...' }] }" },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }
                         ]}],
                         response_format: { type: "json_object" }
@@ -200,84 +194,23 @@
                     let exist = stock.find(i => i.name.toLowerCase() === n.toLowerCase() && i.zone === mode);
                     if(exist) { await db.collection("inventory").doc(exist.id).update({ qty: (exist.qty || 1) + qty, mhd: mhd }); }
                     else { await db.collection("inventory").add({ name: n, qty: qty, mhd: mhd, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() }); }
-                    log(`${qty}x ${n} erfasst.`);
                 }
-            } catch(e) { log("Scan Fehler.", true); }
-            sBtn.disabled = false; sBtn.innerText = "Scan Auslösen"; laser.style.display = "none";
-        }
-
-        // --- SHOP & EXPORT ---
-        async function exportList() {
-            const items = stock.filter(i => i.zone === 'SHOP');
-            let text = "🛒 Gerd 2.0 Liste:\n" + items.map(i => `- ${i.qty||1}x ${i.name}`).join("\n");
-            if(navigator.share) await navigator.share({ text: text });
-            else alert("Kopiert!");
-        }
-
-        async function finishShopping() {
-            const items = stock.filter(i => i.zone === 'SHOP' && i.checked);
-            for(let i of items) { await db.collection("inventory").doc(i.id).update({ zone: 'FRIDGE', checked: false }); }
-            log("Einkauf verstaut.");
-        }
-
-        // --- VOICE TOGGLE ---
-        function toggleSmartEntnahme() {
-            const btn = document.getElementById('voice-trigger-btn');
-            if(!isListening) {
-                currentRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                currentRecognition.lang = "de-DE";
-                currentRecognition.onstart = () => { isListening = true; btn.style.background = "red"; btn.innerText = "Mikro Stoppen"; };
-                currentRecognition.onresult = (e) => { processVoiceRemoval(e.results[0][0].transcript); };
-                currentRecognition.onend = () => { isListening = false; btn.style.background = ""; btn.innerText = "🎙️ Smarte Entnahme"; };
-                currentRecognition.start();
-            } else { currentRecognition.stop(); }
-        }
-
-        async function processVoiceRemoval(text) {
-            const invJson = JSON.stringify(stock.map(i => ({ id: i.id, name: i.name, qty: i.qty || 1 })));
-            const prompt = `Inventar: ${invJson}. Nutzer: "${text}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
-            try {
-                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], response_format: { type: "json_object" } })
-                });
-                const j = await r.json();
-                const updates = JSON.parse(j.choices[0].message.content).remove;
-                for(let u of updates) {
-                    let item = stock.find(i => i.id === u.id);
-                    if(item) {
-                        let nq = (item.qty || 1) - u.qty_to_remove;
-                        if(nq <= 0) await db.collection("inventory").doc(u.id).delete();
-                        else await db.collection("inventory").doc(u.id).update({ qty: nq });
-                    }
-                }
-            } catch(e) { log("Entnahme Fehler.", true); }
+            } catch(e) { console.error(e); }
+            sBtn.disabled = false; laser.style.display = "none";
         }
 
         async function runKaroChef() {
-            const i = document.getElementById('chef-input').value, ex = document.getElementById('extraordinary').checked;
-            const inv = stock.map(it => it.name).join(", ");
-            const p = `Karo Advisor. Gericht: ${i}. Extra: ${ex}. Vorrat: ${inv}. Nenne Rezept & Hersfeld-Preise (Lidl, Aldi, Rewe).`;
+            const i = document.getElementById('chef-input').value;
+            const prompt = `Gericht: ${i}. Vorrat: ${stock.map(s => s.name).join(", ")}. Rezept & Hersfeld Preis-Check (Lidl, Aldi, Rewe).`;
             const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
             });
             const j = await r.json();
             document.getElementById('chef-out').innerText = j.choices[0].message.content;
         }
 
-        async function runShopAI() {
-            const sl = stock.filter(i=>i.zone==='SHOP').map(i=>i.name).join(", ");
-            const p = `Einkauf: ${sl}. Wo in Bad Hersfeld am günstigsten?`;
-            const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
-            });
-            const j = await r.json();
-            document.getElementById('shop-out').innerText = j.choices[0].message.content;
-        }
-
-        const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
+        const log = (m) => { document.getElementById('term').innerText = "> " + m; };
     </script>
 </body>
 </html>
