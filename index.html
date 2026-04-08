@@ -11,23 +11,19 @@
         :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); }
 
-        /* GATEKEEPER */
         #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
         .gold-brand { font-size: 32px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
         
-        /* NAVIGATION */
         .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 20px 0; }
         .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 12px 0; border-radius: 10px; text-align: center; cursor: pointer; }
         .nav-node.active { background: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .nav-node.active span { color: #000; font-weight: 900; }
         .nav-node span { font-size: 7px; text-transform: uppercase; display: block; margin-top: 5px; color: #888; }
 
-        /* CONTENT CARDS */
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; margin-bottom: 20px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .row b { color: var(--gold); font-size: 13px; text-transform: uppercase; font-weight: 900; }
         
-        /* CHEF UI EXPANSED */
         .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .chef-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .karo-tag { background: var(--neon); color: #000; padding: 3px 8px; border-radius: 5px; font-size: 9px; font-weight: 900; text-transform: uppercase; }
@@ -35,13 +31,11 @@
         .chef-input { width: 100%; background: #000; border: 1px solid var(--neon); color: #fff; padding: 15px; border-radius: 12px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
         .toggle-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 11px; color: var(--gold); font-weight: bold; }
         
-        /* KOCHBUCH LOOK */
         .recipe-box { margin-top: 20px; border-top: 1px solid var(--neon); padding-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; }
         .recipe-box h3 { color: var(--neon); font-size: 16px; text-transform: uppercase; margin-top: 0; }
-        .shopping-advice { background: rgba(212, 175, 55, 0.1); border-left: 3px solid var(--gold); padding: 10px; margin: 15px 0; font-size: 11px; }
 
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 18px; border-radius: 15px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-        .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; }
+        .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 10px; cursor: pointer; transition: background 0.3s, color 0.3s; }
         .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 50px; overflow-y: auto; }
     </style>
 </head>
@@ -74,19 +68,18 @@
             <input type="text" id="chef-input" class="chef-input" placeholder="Wunschgericht eingeben...">
             <div class="toggle-container">
                 <input type="checkbox" id="extraordinary" style="accent-color:var(--gold);"> 
-                <span>Außergewöhnliches/Asiatisches Gericht vorschlagen</span>
+                <span>Außergewöhnliches vorschlagen</span>
             </div>
-            <button onclick="runKaroChef()" class="cmd-btn">Strategie & Rezept berechnen</button>
+            <button onclick="runKaroChef()" class="cmd-btn">Strategie berechnen</button>
             <div id="chef-out" class="recipe-box"></div>
         </div>
 
         <div id="ui-shop" class="ai-panel">
-            <div style="color:var(--neon); font-size:11px; margin-bottom:15px; font-weight:900;">HERSFELD PRICE-RADAR</div>
-            <button onclick="runShopAI()" class="cmd-btn">Angebote & Route prüfen</button>
-            <div id="shop-out" class="ai-out" style="font-size:12px; margin-top:15px; line-height:1.4;"></div>
+            <button onclick="runShopAI()" class="cmd-btn">Bad Hersfeld Strategie</button>
+            <div id="shop-out" style="font-size:12px; margin-top:15px;"></div>
         </div>
 
-        <button onclick="smartEntnahme()" class="voice-btn">🎙️ Smarte Entnahme (Sprachbefehl)</button>
+        <button id="voice-trigger-btn" onclick="toggleSmartEntnahme()" class="voice-btn">🎙️ Smarte Entnahme (Sprechen)</button>
 
         <div class="data-card">
             <div id="l-content"></div>
@@ -98,6 +91,8 @@
     <script>
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db;
+        let currentRecognition = null;
+        let isListening = false;
 
         if (GRK) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initFirebase(); }
 
@@ -117,7 +112,7 @@
             cont.innerHTML = filtered.map(i => `
                 <div class="row">
                     <b>${i.qty || 1}x ${i.name}</b>
-                    <span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-weight:bold;">×</span>
+                    <span onclick="del('${i.id}')" style="color:red; cursor:pointer;">×</span>
                 </div>
             `).join('') || '<div style="text-align:center; padding:20px; color:#333;">EMPTY</div>';
         }
@@ -125,26 +120,87 @@
         async function del(id) { if(confirm("Löschen?")) await db.collection("inventory").doc(id).delete(); }
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
-        // --- KARO CHEF INTELLIGENCE ---
+        // --- STEUERUNG MIKROFON (TOGGLE) ---
+        function toggleSmartEntnahme() {
+            const btn = document.getElementById('voice-trigger-btn');
+            if (!isListening) {
+                startVoiceRecognition(btn);
+            } else {
+                stopVoiceRecognition(btn);
+            }
+        }
+
+        function startVoiceRecognition(btn) {
+            if (!window.hasOwnProperty('webkitSpeechRecognition')) {
+                alert("Browser unterstützt kein Mikrofon.");
+                return;
+            }
+            currentRecognition = new webkitSpeechRecognition();
+            currentRecognition.lang = "de-DE";
+            currentRecognition.continuous = false;
+
+            currentRecognition.onstart = () => {
+                isListening = true;
+                btn.style.background = "#ff3e3e";
+                btn.style.color = "#fff";
+                btn.innerText = "🛑 Mikrofon Stoppen";
+                document.getElementById('term').innerText = "> Mikrofon aktiv...";
+            };
+
+            currentRecognition.onresult = async (e) => {
+                const text = e.results[0][0].transcript;
+                await processVoiceRemoval(text);
+                stopVoiceRecognition(btn);
+            };
+
+            currentRecognition.onerror = () => stopVoiceRecognition(btn);
+            currentRecognition.onend = () => { if(isListening) stopVoiceRecognition(btn); };
+
+            currentRecognition.start();
+        }
+
+        function stopVoiceRecognition(btn) {
+            if (currentRecognition) {
+                currentRecognition.abort();
+                currentRecognition = null;
+            }
+            isListening = false;
+            btn.style.background = "rgba(0,242,255,0.1)";
+            btn.style.color = "var(--neon)";
+            btn.innerText = "🎙️ Smarte Entnahme (Sprechen)";
+            document.getElementById('term').innerText = "> Mikrofon deaktiviert.";
+        }
+
+        async function processVoiceRemoval(text) {
+            const invJson = JSON.stringify(stock.map(i => ({ id: i.id, name: i.name, qty: i.qty || 1 })));
+            const prompt = `Inventar: ${invJson}. Nutzer sagt: "${text}". Was wurde entnommen? Antworte NUR als JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], response_format: { type: "json_object" } })
+                });
+                const j = await r.json();
+                const updates = JSON.parse(j.choices[0].message.content).remove;
+                for(let u of updates) {
+                    let item = stock.find(i => i.id === u.id);
+                    if(item) {
+                        let newQty = (item.qty || 1) - u.qty_to_remove;
+                        if(newQty <= 0) await db.collection("inventory").doc(u.id).delete();
+                        else await db.collection("inventory").doc(u.id).update({ qty: newQty });
+                    }
+                }
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance("Bestand aktualisiert."));
+            } catch(e) { console.error(e); }
+        }
+
+        // --- KARO CHEF & SHOP ---
         async function runKaroChef() {
             const input = document.getElementById('chef-input').value;
             const isExtra = document.getElementById('extraordinary').checked;
             const out = document.getElementById('chef-out');
-            out.innerHTML = "Karo analysiert Bestand & Marktpreise...";
-            
-            const inv = stock.filter(i => i.zone !== 'SHOP').map(i => `${i.qty||1}x ${i.name}`).join(", ");
-            const prompt = `Du bist Karo, die Gourmet-Beraterin für Gerd 2.0. 
-            Nutzer-Wunsch: "${input}". 
-            Außergewöhnlich-Modus: ${isExtra ? 'AN' : 'AUS'}. 
-            Bestand: ${inv}.
-            
-            DEINE AUFGABE:
-            1. Falls Außergewöhnlich AN: Schlage ein kreatives, asiatisches oder gehobenes Gericht vor, das auf den Wunsch basiert.
-            2. Prüfe den Bestand: Was ist da, was fehlt?
-            3. HERSFELD-STRATEGIE: Nenne konkret, wo man die fehlenden Dinge in Bad Hersfeld (Lidl Friedloser Str, Aldi, Rewe) gerade am günstigsten bekommt.
-            4. REZEPT: Gib eine klare Schritt-für-Schritt-Anleitung wie in einem Kochbuch.
-            5. ENTAHME: Erinnere daran, am Ende per Voice den Verbrauch abzubuchen.`;
-
+            out.innerHTML = "Analysiere...";
+            const inv = stock.map(i => `${i.qty||1}x ${i.name}`).join(", ");
+            const prompt = `Nutzer: "${input}". Außergewöhnlich: ${isExtra}. Bestand: ${inv}. Nenne Rezept und wo man Fehlendes in Bad Hersfeld (Lidl, Aldi, Rewe) günstig bekommt.`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
@@ -152,15 +208,13 @@
                 });
                 const j = await r.json();
                 out.innerHTML = `<div style="white-space:pre-wrap;">${j.choices[0].message.content}</div>`;
-            } catch(e) { out.innerText = "Fehler bei der Strategie-Berechnung."; }
+            } catch(e) { out.innerText = "Fehler."; }
         }
 
         async function runShopAI() {
             const out = document.getElementById('shop-out');
-            out.innerText = "Hersfeld-Radar läuft...";
             const shopList = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            const prompt = `Einkaufsliste: ${shopList}. Analysiere die Preis-Situation in Bad Hersfeld für Lidl, Aldi Nord und Rewe. Wo bekommt man diese Liste heute am günstigsten? Erstelle eine taktische Route.`;
-            
+            const prompt = `Einkaufsliste: ${shopList}. Wo in Bad Hersfeld (Lidl, Aldi, Rewe) ist es am günstigsten?`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
@@ -168,18 +222,7 @@
                 });
                 const j = await r.json();
                 out.innerText = j.choices[0].message.content;
-            } catch(e) { out.innerText = "Fehler beim Radar."; }
-        }
-
-        function smartEntnahme() {
-            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-            recognition.lang = "de-DE";
-            recognition.start();
-            recognition.onresult = async (e) => {
-                const text = e.results[0][0].transcript;
-                document.getElementById('term').innerText = `> Verarbeite Entnahme: ${text}`;
-                // Hier kommt die Entnahme-Logik von V108 zum Einsatz...
-            };
+            } catch(e) { out.innerText = "Fehler."; }
         }
     </script>
 </body>
