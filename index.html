@@ -3,102 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VITO V65 CORE</title>
+    <title>VITO COMMAND V67</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        /* SOFORT-DESIGN (Lädt ohne Scripte) */
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
-        .ui-box { border: 2px solid #00f2ff; border-radius: 25px; padding: 20px; background: #0a0a0a; box-shadow: 0 0 40px rgba(0,242,255,0.2); margin-top: 20px; }
-        .neon-title { color: #00f2ff; font-style: italic; text-transform: uppercase; letter-spacing: -1px; margin: 0; }
-        .error-log { color: #ff0000; background: #1a0000; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 10px; text-align: left; margin-top: 20px; border: 1px solid #300; display: none; }
-        .btn { width: 100%; padding: 20px; background: #00f2ff; color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 16px; margin-top: 20px; cursor: pointer; }
-        .status-dot { height: 8px; width: 8px; background-color: #ff3e3e; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        /* ELITE DESIGN - 100% SELF-CONTAINED */
+        :root { --neon: #00f2ff; --gold: #d4af37; --bg: #050505; --card: #0a0a0a; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 15px; -webkit-tap-highlight-color: transparent; }
+        
+        .header { border-left: 4px solid var(--neon); padding-left: 15px; margin: 20px 0 30px 0; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-style: italic; text-transform: uppercase; font-size: 24px; letter-spacing: -1px; }
+        .header span { color: var(--neon); }
+        .status-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(212,175,55,0.2); padding: 10px 15px; border-radius: 15px; text-align: right; }
+        .status-led { font-size: 9px; font-weight: bold; color: #00ff41; text-transform: uppercase; }
+
+        .zones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 25px; }
+        .zone-btn { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 0; color: #555; font-size: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .zone-active { background: var(--gold); color: #000; border: none; box-shadow: 0 0 20px rgba(212,175,55,0.3); }
+
+        .scouter-wrap { background: rgba(255,255,255,0.02); border-radius: 30px; padding: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 25px; }
+        .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 20px; overflow: hidden; position: relative; border: 1px solid #111; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .scan-line { height: 2px; background: var(--neon); position: absolute; width: 100%; top: 0; animation: scan 2s linear infinite; box-shadow: 0 0 15px var(--neon); z-index: 10; }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+        
+        .main-btn { width: 100%; background: var(--neon); color: #000; border: none; padding: 20px; border-radius: 15px; font-weight: 900; font-size: 14px; text-transform: uppercase; margin-top: 15px; cursor: pointer; }
+        .main-btn:active { background: #00d2dd; transform: scale(0.98); }
+
+        .inventory { background: rgba(255,255,255,0.02); border-radius: 30px; padding: 20px; border: 1px solid rgba(255,255,255,0.03); }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
+        .item-name { font-weight: 800; font-style: italic; text-transform: uppercase; font-size: 14px; }
+        .item-mhd { font-family: monospace; font-size: 11px; color: var(--gold); border: 1px solid rgba(212,175,55,0.2); padding: 3px 8px; border-radius: 5px; }
+
+        #debug { font-family: monospace; font-size: 8px; color: #222; margin-top: 20px; text-align: left; background: #000; padding: 10px; border-radius: 10px; height: 60px; overflow-y: scroll; }
     </style>
 </head>
 <body>
 
-    <div class="ui-box">
-        <h1 class="neon-title">VITO <span style="color:#fff">COMMAND</span></h1>
-        <p style="font-size: 9px; opacity: 0.5; letter-spacing: 2px;">BAD HERSFELD | HUB V65.0-STABLE</p>
-        
-        <hr style="border:0; border-top:1px solid #222; margin: 20px 0;">
-
-        <div id="connection-status" style="font-size: 11px; font-weight: bold;">
-            <span id="led" class="status-dot"></span> SYSTEM: <span id="status-text">INITIALISIERE...</span>
+    <header class="header">
+        <div>
+            <h1>VITO <span>COMMAND</span></h1>
+            <div style="font-size: 8px; color: #333; letter-spacing: 2px; margin-top: 5px;">BAD HERSFELD | HUB V67.0-FINAL</div>
         </div>
-
-        <div id="camera-area" style="margin-top: 20px;">
-            <video id="v" autoplay playsinline muted style="width:100%; border-radius: 15px; background: #111; display:none; aspect-ratio: 1/1; object-fit: cover;"></video>
-            <div id="p-text" style="padding: 40px; color: #222; font-weight: 900; font-size: 10px;">WARTE AUF START...</div>
+        <div class="status-box">
+            <div id="db-led" class="status-led">HUB LIVE ●</div>
+            <div style="font-size: 20px; font-weight: 900; font-style: italic;">4.0°C</div>
         </div>
+    </header>
 
-        <button id="sBtn" class="btn">SCANNER STARTEN</button>
+    <div class="zones">
+        <button onclick="sz('FRIDGE')" id="z-FRIDGE" class="zone-btn zone-active">Kühl</button>
+        <button onclick="sz('FREEZER')" id="z-FREEZER" class="zone-btn">Frost</button>
+        <button onclick="sz('PANTRY')" id="z-PANTRY" class="zone-btn">Vorrat</button>
     </div>
 
-    <div id="error-box" class="error-log"></div>
+    <div class="scouter-wrap">
+        <div class="viewport">
+            <div id="laser" style="display:none;" class="scan-line"></div>
+            <video id="vid" autoplay playsinline muted style="display:none;"></video>
+            <div id="p-text" style="padding-top:45%; color:#151515; font-size:10px; font-weight:bold; letter-spacing:3px; text-align:center;">SCOUTER STANDBY</div>
+        </div>
+        <button id="sBtn" class="main-btn">Einheit Scannen</button>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <div class="inventory">
+        <div style="color:var(--gold); font-size:10px; font-weight:bold; margin-bottom:15px; text-transform:uppercase;">Bestand: <span id="z-name" style="color:#fff">Kühl</span></div>
+        <div id="list-content"></div>
+    </div>
+
+    <div id="debug">> System-Check Bad Hersfeld...</div>
 
     <script>
-        // ERROR-DETEKTOR
-        const errBox = document.getElementById('error-box');
-        window.onerror = function(msg, url, line) {
-            errBox.style.display = "block";
-            errBox.innerHTML += `> ERROR: ${msg} (Zeile: ${line})<br>`;
-        };
-
-        const log = (m) => { console.log(m); };
-
-        // CONFIG
+        const log = (m) => { const t = document.getElementById('debug'); t.innerHTML += `<br>> ${m}`; t.scrollTop = t.scrollHeight; };
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
 
-        async function initSystem() {
-            try {
-                if (typeof firebase === 'undefined') {
-                    throw new Error("Firebase-Script konnte nicht geladen werden. Prüfe Internetverbindung.");
-                }
-                
-                firebase.initializeApp(cfg);
-                const db = firebase.firestore();
-                
-                document.getElementById('led').style.backgroundColor = "#00ff41";
-                document.getElementById('status-text').innerText = "LIVE (BAD HERSFELD)";
-                log("System bereit.");
+        let GRK = localStorage.getItem('GRK'), cz = 'FRIDGE', all = [];
 
-                // Key-Check
-                if(!localStorage.getItem('GRK')) {
-                    const k = prompt("VITO LOGIN: Groq Key eingeben:");
-                    if(k) localStorage.setItem('GRK', k.trim());
-                }
-            } catch (e) {
-                errBox.style.display = "block";
-                errBox.innerHTML += `> INIT-FEHLER: ${e.message}<br>`;
-            }
+        if(!GRK) { GRK = prompt("Groq Key (gsk_...) eingeben:"); if(GRK) localStorage.setItem('GRK', GRK.trim()); }
+
+        try {
+            firebase.initializeApp(cfg);
+            const db = firebase.firestore();
+            log("Schnittstelle stabil.");
+            db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
+                all = s.docs.map(d => ({id: d.id, ...d.data()}));
+                render();
+            });
+        } catch(e) { log("DB-FEHLER: " + e.message); }
+
+        function render() {
+            const f = all.filter(i => i.zone === cz);
+            document.getElementById('list-content').innerHTML = f.map(i => `
+                <div class="list-item">
+                    <span class="item-name">${i.name}</span>
+                    <span class="item-mhd">${i.mhd || 'OFFEN'}</span>
+                </div>
+            `).join('') || '<div style="text-align:center; padding:30px; color:#111; font-size:9px; font-weight:bold;">ZONE LEER</div>';
         }
 
-        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn'), pText = document.getElementById('p-text');
-        let camActive = false;
+        const vid = document.getElementById('vid'), sBtn = document.getElementById('sBtn'), laser = document.getElementById('laser');
+        let cam = false;
 
         sBtn.onclick = async () => {
-            if(!camActive) {
+            if(!cam) {
                 try {
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    vid.srcObject = s;
-                    vid.style.display = "block";
-                    pText.style.display = "none";
-                    camActive = true;
-                    sBtn.innerText = "PRODUKT ANALYSIEREN";
-                } catch(e) {
-                    alert("Kamera-Fehler: " + e.message);
-                }
+                    vid.srcObject = s; vid.style.display = "block";
+                    document.getElementById('p-text').style.display = "none";
+                    cam = true; sBtn.innerText = "Analyse Starten";
+                    log("Scouter LIVE.");
+                } catch(e) { alert("Kamera-Fehler!"); }
             } else {
-                alert("KI-Analyse bereit. Datenbank steht.");
-                // Hier kommt der Groq-Call rein, sobald das Bild steht
+                analyze();
             }
         };
 
-        // Start
-        initSystem();
+        async function analyze() {
+            sBtn.disabled = true; sBtn.innerText = "KI PRÜFT...";
+            laser.style.display = "block";
+            const canv = document.createElement('canvas'); canv.width = 640; canv.height = 640;
+            canv.getContext('2d').drawImage(vid, 0, 0, 640, 640);
+            
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "llama-3.2-11b-vision-preview",
+                        messages: [{ role: "user", content: [
+                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'Datum' }" },
+                            { type: "image_url", image_url: { url: canv.toDataURL('image/jpeg', 0.6) } }
+                        ]}]
+                    })
+                });
+                const j = await r.json();
+                const d = JSON.parse(j.choices[0].message.content.match(/\{.*\}/s)[0]);
+                await firebase.firestore().collection("inventory").add({ ...d, zone: cz, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                if(navigator.vibrate) navigator.vibrate(100);
+            } catch(e) { log("KI-FEHLER: Key prüfen!"); }
+            sBtn.disabled = false; sBtn.innerText = "Analyse Starten";
+            laser.style.display = "none";
+        }
+
+        window.sz = (z) => {
+            cz = z;
+            document.getElementById('z-name').innerText = (z=='FRIDGE'?'Kühl':z=='FREEZER'?'Frost':'Vorrat');
+            ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('z-'+id).classList.toggle('zone-active', id === z));
+            render();
+        };
     </script>
 </body>
 </html>
