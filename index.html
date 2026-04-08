@@ -2,111 +2,80 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <title>GERD 2.0 | THE LEGACY</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { 
-            --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44;
-            --neon: #00f2ff; --bg: #010101; 
-        }
+        :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; overflow-x: hidden; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); }
 
-        body { 
-            background: var(--bg); color: #fff; font-family: 'Inter', -apple-system, sans-serif; 
-            margin: 0; padding: 15px; overflow-x: hidden;
-            background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%);
+        /* --- GATEKEEPER / API EINGABE --- */
+        #gatekeeper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box;
         }
-
-        /* --- GATEKEEPER / BOOT SCREEN --- */
-        #boot-screen {
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            height: 90vh; text-align: center;
-        }
-        .boot-title {
+        .gk-title {
             font-size: 38px; font-weight: 900; font-style: italic; text-transform: uppercase;
             background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 20px rgba(212,175,55,0.5)); letter-spacing: -1px; margin-bottom: 5px;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;
         }
-        .boot-sub { font-size: 9px; color: var(--neon); letter-spacing: 5px; text-transform: uppercase; margin-bottom: 40px; opacity: 0.8; }
-        .key-input {
-            width: 90%; background: rgba(255,255,255,0.05); border: 1px solid var(--gold);
-            padding: 15px; border-radius: 12px; color: #fff; font-size: 14px; text-align: center;
-            outline: none; margin-bottom: 20px; font-family: monospace; box-sizing: border-box;
+        .gk-input {
+            width: 100%; max-width: 400px; background: #111; border: 2px solid var(--gold);
+            padding: 18px; border-radius: 12px; color: #fff; font-size: 16px; text-align: center;
+            outline: none; margin-bottom: 20px; font-family: monospace;
         }
-        .key-input::placeholder { color: #555; }
-        
-        /* --- MAIN APP --- */
+        .gk-btn {
+            width: 100%; max-width: 400px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-d) 100%);
+            border: none; padding: 20px; border-radius: 12px; color: #000; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 2px; cursor: pointer; box-shadow: 0 5px 15px rgba(212,175,55,0.3);
+        }
+
+        /* --- MAIN DASHBOARD --- */
         #main-app { display: none; }
+        .legacy-branding { text-align: center; margin: 20px 0 30px 0; }
+        .gold-brand { font-size: 30px; font-weight: 900; font-style: italic; text-transform: uppercase; color: var(--gold); }
         
-        /* GOLDEN LEGACY BRANDING */
-        .legacy-branding { text-align: center; margin: 20px 0 35px 0; }
-        .gold-brand { 
-            font-size: 30px; font-weight: 900; font-style: italic; text-transform: uppercase;
-            background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); display: block;
-        }
-
-        /* NAVIGATION HUB */
-        .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 25px; }
-        .nav-node { 
-            background: rgba(255,255,255,0.02); border: 1px solid rgba(212,175,55,0.2); 
-            padding: 16px 0; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.3s;
-        }
-        .nav-node.active { background: var(--gold); border-color: var(--gold-l); box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+        .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 20px; }
+        .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 15px 0; border-radius: 10px; text-align: center; cursor: pointer; }
+        .nav-node.active { background: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .nav-node.active span { color: #000; font-weight: 900; }
-        .nav-node span { font-size: 7px; text-transform: uppercase; display: block; margin-top: 5px; color: #777; }
+        .nav-node span { font-size: 8px; text-transform: uppercase; display: block; margin-top: 5px; color: #888; }
 
-        /* VISION UNIT */
-        .scouter-frame { 
-            background: rgba(255,255,255,0.01); border: 1px solid rgba(212,175,55,0.1); 
-            border-radius: 40px; padding: 15px; position: relative; margin-bottom: 25px;
-        }
-        .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 30px; overflow: hidden; position: relative; border: 1px solid #111; }
-        video { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
-        .scan-laser { 
-            position: absolute; width: 100%; height: 3px; background: var(--neon); top: 0; 
-            animation: scan 2s linear infinite; box-shadow: 0 0 15px var(--neon); z-index: 100; display: none;
-        }
+        .scouter-frame { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.2); border-radius: 30px; padding: 15px; position: relative; margin-bottom: 20px; }
+        .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 20px; overflow: hidden; position: relative; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .laser { position: absolute; width: 100%; height: 3px; background: var(--neon); top: 0; animation: scan 2s linear infinite; display: none; box-shadow: 0 0 15px var(--neon); z-index: 100; }
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
 
-        .cmd-btn { 
-            width: 100%; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-d) 100%);
-            border: none; padding: 22px; border-radius: 18px; color: #000; font-weight: 900; 
-            text-transform: uppercase; letter-spacing: 2px; margin-top: 15px; cursor: pointer; box-sizing: border-box;
-        }
-
-        /* DATA DISPLAY */
-        .data-card { background: rgba(255,255,255,0.02); border-radius: 30px; padding: 25px; border: 1px solid rgba(255,255,255,0.03); min-height: 200px; }
+        .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 20px; border-radius: 15px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 15px; }
+        
+        .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 200px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .row b { color: var(--gold); font-size: 14px; text-transform: uppercase; font-style: italic; }
-        .row .mhd { font-family: monospace; font-size: 10px; color: var(--neon); opacity: 0.7; margin-right: 15px; }
-
-        /* TERMINAL */
-        .terminal { 
-            background: #000; border: 1px solid #222; border-radius: 12px; 
-            padding: 12px; font-family: monospace; font-size: 10px; color: var(--neon); 
-            height: 80px; overflow-y: auto; margin-top: 20px;
-        }
+        
+        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 12px; font-family: monospace; font-size: 10px; color: #00f2ff; height: 80px; overflow-y: auto; margin-top: 15px; }
         .err { color: #ff3e3e; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="boot-screen">
-        <div class="boot-title">GERD 2.0</div>
-        <div class="boot-sub">System Initialization</div>
-        <div style="font-size: 10px; color: #888; margin-bottom: 10px; text-transform: uppercase;">Groq Command Key eingeben</div>
-        <input type="text" id="api-input" class="key-input" placeholder="gsk_...">
-        <button onclick="bootSystem()" class="cmd-btn" style="width: 90%;">System Hochfahren</button>
+    <div id="gatekeeper">
+        <div class="gk-title">GERD 2.0</div>
+        <p style="color: var(--neon); font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Authentifizierung erforderlich</p>
+        <input type="text" id="api-input" class="gk-input" placeholder="Groq Key (gsk_...) hier einfügen">
+        <button onclick="saveKey()" class="gk-btn">SYSTEM FREISCHALTEN</button>
+        <button onclick="forceRefresh()" style="margin-top: 20px; background: none; border: none; color: #666; font-size: 10px; text-decoration: underline;">Browser-Cache löschen</button>
     </div>
 
     <div id="main-app">
         <div class="legacy-branding">
             <span class="gold-brand">Gerd 2.0 – The Legacy</span>
-            <div style="font-size: 7px; color: var(--neon); letter-spacing: 4px; text-transform: uppercase; margin-top: 10px; opacity: 0.6;">Bad Hersfeld | Tactical Command</div>
         </div>
 
         <nav class="nav-hub">
@@ -119,94 +88,92 @@
 
         <div id="ui-scouter" class="scouter-frame">
             <div class="viewport">
-                <div id="laser" class="scan-laser"></div>
+                <div id="laser" class="laser"></div>
                 <video id="v" autoplay playsinline muted style="display:none;"></video>
-                <div id="p-text" style="padding-top:45%; text-align:center; color:#111; font-weight:900; letter-spacing:4px;">SYSTEM IDLE</div>
+                <div id="p-text" style="padding-top:45%; text-align:center; color:#222; font-weight:900; letter-spacing:4px;">CAMERA STANDBY</div>
             </div>
-            <button id="sBtn" class="cmd-btn">Initiate Legacy Scan</button>
+            <button id="sBtn" class="cmd-btn">Initiate Vision Scan</button>
         </div>
 
         <div class="data-card">
             <div id="l-content"></div>
-            <button id="strategyBtn" onclick="runStrategy()" class="cmd-btn" style="display:none; background:var(--neon);">Execute Strategy</button>
-            <div id="ai-out" style="margin-top:15px; font-size:12px; color:var(--neon); font-style:italic;"></div>
         </div>
 
-        <div class="terminal" id="term">> Command Interface online...</div>
+        <div class="terminal" id="term">> System online...</div>
         
         <div style="text-align:center; margin-top: 20px;">
-            <span onclick="resetSystem()" style="color:#333; font-size: 8px; text-decoration: underline; cursor: pointer; text-transform: uppercase;">System Reset (Log Out)</span>
+            <button onclick="wipeSystem()" style="background:none; border:none; color:#ff3e3e; font-size:9px; text-decoration:underline; font-weight:bold; cursor:pointer;">⚠️ KEY LÖSCHEN & NEUSTART</button>
         </div>
     </div>
 
     <script>
-        // GLOBALE VARIABLEN
+        // CACHE BUSTER SCRIPT
+        function forceRefresh() {
+            window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
+        }
+
+        const term = document.getElementById('term');
+        const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
+
+        // FIREBASE CONFIG
+        const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
+
         let GRK = localStorage.getItem('GRK');
         let mode = 'FRIDGE';
         let stock = [];
         let db;
 
-        const cfg = { 
-            apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", 
-            authDomain: "gen-lang-client-0348637849.firebaseapp.com", 
-            projectId: "gen-lang-client-0348637849", 
-            storageBucket: "gen-lang-client-0348637849.firebasestorage.app", 
-            messagingSenderId: "1008937513696", 
-            appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" 
-        };
-
-        const term = document.getElementById('term');
-        const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
-
-        // INITIALISIERUNG
-        if(GRK && GRK.startsWith('gsk_')) { startApp(); }
-
-        function bootSystem() {
-            const input = document.getElementById('api-input').value.trim();
-            if(input.startsWith('gsk_')) {
-                localStorage.setItem('GRK', input);
-                GRK = input;
-                startApp();
-            } else { alert("Authentifizierung fehlgeschlagen. Key muss mit 'gsk_' beginnen."); }
+        // CHECK KEY BEIM START
+        if (GRK && GRK.startsWith('gsk_')) {
+            document.getElementById('gatekeeper').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            initFirebase();
         }
 
-        function resetSystem() { localStorage.removeItem('GRK'); location.reload(); }
+        function saveKey() {
+            const input = document.getElementById('api-input').value.trim();
+            if (input.startsWith('gsk_')) {
+                localStorage.setItem('GRK', input);
+                GRK = input;
+                document.getElementById('gatekeeper').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                initFirebase();
+            } else {
+                alert("Fehler: API Key muss mit 'gsk_' beginnen.");
+            }
+        }
 
-        function startApp() {
-            document.getElementById('boot-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
+        function wipeSystem() {
+            localStorage.removeItem('GRK');
+            forceRefresh();
+        }
 
+        function initFirebase() {
             if (!firebase.apps.length) firebase.initializeApp(cfg);
             db = firebase.firestore();
-
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => {
                 stock = s.docs.map(d => ({id: d.id, ...d.data()}));
                 render();
-            }, error => { log("Datenbank-Fehler: " + error.message, true); });
-            log("Verbindung zur Zentrale hergestellt.");
+            }, e => log("DB-Fehler: " + e.message, true));
         }
 
         function render() {
             const cont = document.getElementById('l-content');
             const filtered = stock.filter(i => i.zone === mode);
             document.getElementById('ui-scouter').style.display = (mode === 'CHEF' ? 'none' : 'block');
-            document.getElementById('strategyBtn').style.display = (mode === 'SHOP' || mode === 'CHEF' ? 'block' : 'none');
             
             cont.innerHTML = filtered.map(i => `
                 <div class="row">
                     <b>${i.name}</b>
-                    <div style="display:flex; align-items:center;">
-                        <span class="mhd">${i.mhd || ''}</span>
-                        <span onclick="del('${i.id}')" style="color:#ff3e3e; font-size:20px; font-weight:bold; cursor:pointer;">×</span>
-                    </div>
+                    <span onclick="del('${i.id}')" style="color:#ff3e3e; font-size:20px; font-weight:bold; cursor:pointer;">×</span>
                 </div>
             `).join('') || '<div style="text-align:center; padding:30px; color:#111; font-weight:900;">HUB EMPTY</div>';
         }
 
-        async function del(id) { if(confirm("Eintrag entfernen?")) await db.collection("inventory").doc(id).delete(); }
+        async function del(id) { if(confirm("Eintrag löschen?")) await db.collection("inventory").doc(id).delete(); }
 
         window.sm = (m) => {
-            mode = m; document.getElementById('ai-out').innerText = '';
+            mode = m;
             ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m));
             render();
         };
@@ -220,30 +187,26 @@
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     v.srcObject = s; v.style.display = "block";
                     document.getElementById('p-text').style.display = "none";
-                    cam = true; sBtn.innerText = "Capture Multi-View";
-                    log("Kamera aktiv.");
-                } catch(e) { log("Kamera-Fehler: " + e.message, true); }
+                    cam = true; sBtn.innerText = "Execute Scan";
+                } catch(e) { log("Kamera blockiert.", true); }
             } else {
                 analyze();
             }
         };
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "Processing Multi-Vision...";
+            sBtn.disabled = true; sBtn.innerText = "Analyzing Stream...";
             laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 640; can.height = 640;
             can.getContext('2d').drawImage(v, 0, 0, 640, 640);
             
             try {
-                log("Kontaktiere Groq Llama-3.2-11b Vision...");
+                log("Verbindung zu Groq Vision...");
                 
-                // EXAKT DER CODE AUS DEINEM BLUEPRINT:
+                // DEINE BLUEPRINT LOGIK
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${GRK}` // (Wir fügen nur den Key hinzu, weil wir kein Backend haben)
-                    },
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "llama-3.2-11b-vision-preview",
                         messages: [
@@ -252,12 +215,9 @@
                             content: [
                             { 
                                 type: "text", 
-                                text: `Analysiere das Bild extrem genau. Identifiziere JEDES EINZELNE Produkt, das zu sehen ist. Wenn mehrere Produkte da sind, liste sie ALLE auf. Gib NUR JSON zurück: { "products": [{ "name": "Produktname", "expiryDate": "YYYY-MM-DD" }] }. Schätze das Datum (ca. 7-14 Tage ab heute) wenn nicht sichtbar.` 
+                                text: `Analysiere das Bild extrem genau. Identifiziere JEDES EINZELNE Produkt. Gib NUR JSON zurück: { "products": [{ "name": "Produktname" }] }.` 
                             }, 
-                            { 
-                                type: "image_url", 
-                                image_url: { url: can.toDataURL('image/jpeg', 0.6) } 
-                            }
+                            { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.6) } }
                             ] 
                         }
                         ],
@@ -267,56 +227,26 @@
 
                 if(!r.ok) {
                     const err = await r.json();
-                    throw new Error(err.error.message);
+                    throw new Error(err.error?.message || "Unbekannter API Fehler");
                 }
 
                 const j = await r.json();
-                
-                // JSON-Parse basierend auf dem neuen Objekt-Format { "products": [...] }
                 const parsedResponse = JSON.parse(j.choices[0].message.content);
                 const items = parsedResponse.products;
                 
-                if (!items || items.length === 0) {
-                    throw new Error("Keine Produkte erkannt.");
-                }
+                if (!items || items.length === 0) throw new Error("Keine Produkte gefunden.");
                 
                 for(let item of items) {
-                    // Mappe expiryDate auf unsere mhd Variable
-                    const produktDaten = {
-                        name: item.name,
-                        mhd: item.expiryDate || 'N/A',
-                        zone: mode,
-                        addedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-
-                    await db.collection("inventory").add(produktDaten);
+                    await db.collection("inventory").add({ name: item.name, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                     log(`Erfasst: ${item.name}`);
                     window.speechSynthesis.speak(new SpeechSynthesisUtterance("Check: " + item.name));
                 }
                 if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
             } catch(e) { 
                 log("KI-FEHLER: " + e.message, true); 
-                alert("Fehler bei Analyse: " + e.message);
             }
-            sBtn.disabled = false; sBtn.innerText = "Capture Multi-View";
+            sBtn.disabled = false; sBtn.innerText = "Execute Scan";
             laser.style.display = "none";
-        }
-
-        async function runStrategy() {
-            const out = document.getElementById('ai-out');
-            out.innerText = "Calculating Tactical Solution...";
-            const inv = stock.map(i => i.name).join(", ");
-            const p = mode === 'CHEF' ? `Bestand: ${inv}. Rezept & Einkaufs-Tipp Bad Hersfeld.` : `Einkaufsliste: ${stock.filter(i=>i.zone==='SHOP').map(i=>i.name)}. Günstigster Markt in Bad Hersfeld (Aldi, Lidl, Rewe)?`;
-            
-            try {
-                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
-                });
-                const j = await r.json();
-                out.innerText = j.choices[0].message.content;
-            } catch(e) { out.innerText = "Netzwerk-Fehler."; }
         }
     </script>
 </body>
