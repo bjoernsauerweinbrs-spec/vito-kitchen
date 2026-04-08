@@ -38,19 +38,23 @@
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
 
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 11px; cursor: pointer; }
+        .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 11px; cursor: pointer; box-sizing: border-box; }
         .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
         
         .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; font-size: 12px; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .voice-btn:active { background: var(--neon); color: #000; }
 
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; transition: 0.3s; }
         .row-info { display: flex; flex-direction: column; }
-        .row-name { color: var(--gold); font-size: 14px; text-transform: uppercase; font-style: italic; font-weight: 900; }
+        .row-name { color: var(--gold); font-size: 14px; text-transform: uppercase; font-style: italic; font-weight: 900; transition: 0.3s; }
         .row-meta { font-family: monospace; font-size: 10px; color: var(--neon); margin-top: 3px; }
         .qty-badge { background: #333; color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
         
+        /* CHECKBOX STYLING */
+        .shop-check { width: 20px; height: 20px; margin-right: 15px; accent-color: #00ff41; cursor: pointer; }
+        .item-checked { text-decoration: line-through; opacity: 0.5; color: #888 !important; }
+
         /* CHEF & SHOP UI */
         .ai-panel { display: none; margin-bottom: 20px; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 15px; padding: 15px; }
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -103,7 +107,11 @@
         </div>
 
         <div id="ui-shop" class="ai-panel">
-            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Strategie</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="exportList()" class="cmd-btn" style="margin-top:0; background:#fff; color:#000;">📤 Export iPhone</button>
+                <button onclick="finishShopping()" class="cmd-btn" style="margin-top:0; background:#00ff41; color:#000;">✅ Gekauft</button>
+            </div>
+            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon); margin-top:0;">Bad Hersfeld Angebote Prüfen</button>
             <div id="shop-out" class="ai-out"></div>
         </div>
 
@@ -117,6 +125,7 @@
     </div>
 
     <script>
+        function forceRefresh() { window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime(); }
         const term = document.getElementById('term');
         const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
 
@@ -152,29 +161,71 @@
         function render() {
             const cont = document.getElementById('l-content');
             const filtered = stock.filter(i => i.zone === mode);
+            
             document.getElementById('ui-scouter').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'block');
             document.getElementById('ui-chef').style.display = (mode === 'CHEF' ? 'block' : 'none');
             document.getElementById('ui-shop').style.display = (mode === 'SHOP' ? 'block' : 'none');
             
-            cont.innerHTML = filtered.map(i => `
+            cont.innerHTML = filtered.map(i => {
+                const isChecked = i.checked ? true : false;
+                const checkClass = isChecked ? 'item-checked' : '';
+                const checkBoxHTML = mode === 'SHOP' ? `<input type="checkbox" class="shop-check" ${isChecked ? 'checked' : ''} onchange="toggleCheck('${i.id}', this.checked)">` : '';
+
+                return `
                 <div class="row">
                     <div style="display:flex; align-items:center;">
+                        ${checkBoxHTML}
                         <span class="qty-badge">${i.qty || 1}x</span>
                         <div class="row-info">
-                            <span class="row-name">${i.name}</span>
+                            <span class="row-name ${checkClass}">${i.name}</span>
                             <span class="row-meta">MHD: ${i.mhd || 'Nicht erkannt'}</span>
                         </div>
                     </div>
                     <span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-size:24px;">×</span>
                 </div>
-            `).join('') || '<div style="text-align:center; padding:20px; color:#111; font-weight:900;">HUB EMPTY</div>';
+                `;
+            }).join('') || '<div style="text-align:center; padding:20px; color:#111; font-weight:900;">HUB EMPTY</div>';
         }
 
         async function del(id) { if(confirm("Eintrag komplett löschen?")) await db.collection("inventory").doc(id).delete(); }
 
+        // --- SHOPPING FUNKTIONEN (EXPORT & AUTO-RÄUMEN) ---
+        async function toggleCheck(id, isChecked) {
+            await db.collection("inventory").doc(id).update({ checked: isChecked });
+        }
+
+        async function exportList() {
+            const shopItems = stock.filter(i => i.zone === 'SHOP');
+            if(shopItems.length === 0) return alert("Die Einkaufsliste ist leer!");
+            
+            let text = "🛒 GERD 2.0 Einkaufsliste:\n\n";
+            shopItems.forEach(i => text += `- ${i.qty || 1}x ${i.name}\n`);
+            
+            if (navigator.share) {
+                try { await navigator.share({ title: 'Einkaufsliste', text: text }); } 
+                catch(e) { log("Export abgebrochen."); }
+            } else {
+                navigator.clipboard.writeText(text);
+                alert("Liste in die Zwischenablage kopiert! Du kannst sie jetzt in Notizen einfügen.");
+            }
+        }
+
+        async function finishShopping() {
+            const checkedItems = stock.filter(i => i.zone === 'SHOP' && i.checked);
+            if(checkedItems.length === 0) return alert("Bitte hake zuerst die Artikel ab, die du gekauft hast!");
+            
+            if(confirm(checkedItems.length + " abgehakte Artikel automatisch in den Kühlschrank räumen?")) {
+                for(let item of checkedItems) {
+                    await db.collection("inventory").doc(item.id).update({ zone: 'FRIDGE', checked: firebase.firestore.FieldValue.delete() });
+                }
+                log("Einkauf im Kühlschrank verstaut.");
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance("Einkauf erfolgreich verstaut."));
+            }
+        }
+
         window.sm = (m) => { mode = m; render(); };
 
-        // --- KAMERA ---
+        // --- KAMERA & SCANNER ---
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
         let camActive = false;
 
@@ -196,10 +247,8 @@
             if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
             v.style.display = "none"; document.getElementById('p-text').style.display = "block";
             camActive = false; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none";
-            log("Kamera ausgeschaltet.");
         }
 
-        // --- SMART SCAN (AGGREGATION & MHD) ---
         async function analyze() {
             sBtn.disabled = true; sBtn.innerText = "Analysiere..."; laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
@@ -208,12 +257,11 @@
             try {
                 log("Suche Produkte, Anzahl & MHD...");
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
+                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "meta-llama/llama-4-scout-17b-16e-instruct",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "Zähle die Produkte auf dem Bild. Lies auch das Ablaufdatum (MHD) ab, falls sichtbar. Benutze kurze Standardnamen (z.B. 'Schmand', 'Joghurt'). Gib NUR JSON zurück: { 'products': [{ 'name': 'Produkt', 'anzahl': 2, 'mhd': '12.05.' }] }" },
+                            { type: "text", text: "Zähle die Produkte auf dem Bild. Lies auch das Ablaufdatum (MHD) ab. Gib NUR JSON zurück: { 'products': [{ 'name': 'Produkt', 'anzahl': 2, 'mhd': '12.05.' }] }" },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }
                         ]}],
                         response_format: { type: "json_object" }
@@ -228,24 +276,22 @@
                     let mhd = item.mhd || "Unbekannt";
                     let n = item.name;
 
-                    // SMART STACKING (Prüfe ob Artikel schon existiert)
                     let exist = stock.find(i => i.name.toLowerCase() === n.toLowerCase() && i.zone === mode);
-                    
                     if(exist) {
                         await db.collection("inventory").doc(exist.id).update({ qty: (exist.qty || 1) + qty, mhd: mhd });
-                        log(`Aggregiert: ${qty}x ${n} (Gesamt: ${(exist.qty||1)+qty})`);
+                        log(`Aggregiert: ${qty}x ${n}`);
                     } else {
                         await db.collection("inventory").add({ name: n, qty: qty, mhd: mhd, zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                        log(`Neu erfasst: ${qty}x ${n}`);
+                        log(`Neu: ${qty}x ${n}`);
                     }
-                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(qty + " mal " + n + " registriert"));
+                    window.speechSynthesis.speak(new SpeechSynthesisUtterance(qty + " mal " + n));
                 }
             } catch(e) { log("KI Fehler beim Scannen.", true); }
             
             sBtn.disabled = false; sBtn.innerText = "Scan Auslösen"; laser.style.display = "none";
         }
 
-        // --- SMARTE ENTNAHME (VOICE) ---
+        // --- SMARTE ENTNAHME & KÜNSTLICHE INTELLIGENZ ---
         function startDictation(targetId = null) {
             if (window.hasOwnProperty('webkitSpeechRecognition')) {
                 const recognition = new webkitSpeechRecognition();
@@ -256,8 +302,7 @@
                     if(targetId) { document.getElementById(targetId).value = t; log("Spracheingabe: " + t); }
                     else { processVoiceRemoval(t); }
                 };
-                recognition.onerror = function(e) { log("Mikrofon-Fehler.", true); }
-            } else { alert("Browser unterstützt kein Mikrofon."); }
+            } else { alert("Dein Browser unterstützt leider kein Mikrofon."); }
         }
 
         function smartEntnahme() { startDictation(); }
@@ -265,7 +310,7 @@
         async function processVoiceRemoval(text) {
             log(`Entnahmebefehl: "${text}"`);
             const invJson = JSON.stringify(stock.map(i => ({ id: i.id, name: i.name, qty: i.qty || 1 })));
-            const prompt = `Aktuelles Inventar: ${invJson}. Der Nutzer sagt: "${text}". Analysiere, was entnommen wurde. Antworte NUR als JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }. Wenn nichts passt, lass das Array leer.`;
+            const prompt = `Inventar: ${invJson}. Nutzer sagt: "${text}". Was wurde entnommen? Antworte NUR als JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
 
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -275,26 +320,20 @@
                 const j = await r.json();
                 const updates = JSON.parse(j.choices[0].message.content).remove;
 
-                if(!updates || updates.length === 0) { log("Keine passenden Artikel gefunden."); return; }
+                if(!updates || updates.length === 0) return log("Keine passenden Artikel gefunden.");
 
                 for(let u of updates) {
                     let item = stock.find(i => i.id === u.id);
                     if(item) {
                         let newQty = (item.qty || 1) - u.qty_to_remove;
-                        if(newQty <= 0) {
-                            await db.collection("inventory").doc(u.id).delete();
-                            log(`${item.name} komplett verbraucht.`);
-                        } else {
-                            await db.collection("inventory").doc(u.id).update({ qty: newQty });
-                            log(`${item.name} reduziert auf ${newQty}.`);
-                        }
+                        if(newQty <= 0) { await db.collection("inventory").doc(u.id).delete(); } 
+                        else { await db.collection("inventory").doc(u.id).update({ qty: newQty }); }
                     }
                 }
                 window.speechSynthesis.speak(new SpeechSynthesisUtterance("Bestand aktualisiert."));
             } catch(e) { log("Fehler bei Entnahme.", true); }
         }
 
-        // --- CHEF & SHOP KI ---
         async function fetchGroqLogic(prompt, outputElementId) {
             const out = document.getElementById(outputElementId); out.innerText = "Taktiktafel lädt...";
             try {
@@ -310,14 +349,14 @@
             const dish = document.getElementById('chef-input').value.trim();
             if(!dish) return alert("Bitte Gericht eingeben!");
             const inv = stock.filter(i => i.zone === 'FRIDGE' || i.zone === 'PANTRY').map(i => `${i.qty||1}x ${i.name}`).join(", ");
-            const prompt = `Gericht: "${dish}". Vorrat: ${inv}. Liste nötige Zutaten, prüfe Bestand, schreibe klaren Einkaufszettel. Hinweis für Nutzer: Danach einfach per Sprachbefehl "Habe ${dish} gekocht" sagen, um Bestand automatisch abzubuchen.`;
+            const prompt = `Gericht: "${dish}". Vorrat: ${inv}. Liste Zutaten, prüfe Bestand, schreibe Einkaufszettel. Sage am Ende: "Sage 'Habe ${dish} gekocht' zur automatischen Entnahme."`;
             fetchGroqLogic(prompt, 'chef-out');
         }
 
         function runShopAI() {
             const shopList = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
             if(!shopList) return alert("Einkaufsliste leer!");
-            const prompt = `Kaufliste: ${shopList}. Welcher Supermarkt in Bad Hersfeld (Lidl Friedloser Str, Aldi, Rewe) ist dafür am besten? Gib Empfehlungen.`;
+            const prompt = `Kaufliste: ${shopList}. Welcher Supermarkt in Bad Hersfeld (Lidl Friedloser Str, Aldi, Rewe) ist dafür am besten?`;
             fetchGroqLogic(prompt, 'shop-out');
         }
     </script>
