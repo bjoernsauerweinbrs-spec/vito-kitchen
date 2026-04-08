@@ -30,23 +30,23 @@
     </header>
 
     <div class="flex gap-2 mb-6 text-center">
-        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black zone-active">🧊 Kühl</button>
-        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600">❄️ Frost</button>
-        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600">📦 Vorrat</button>
+        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black zone-active uppercase">🧊 Kühl</button>
+        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600 uppercase">❄️ Frost</button>
+        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600 uppercase">📦 Vorrat</button>
     </div>
 
     <div class="glass p-5 rounded-[2.5rem] mb-6">
         <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-gray-900 flex items-center justify-center">
             <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
             <canvas id="canvas" class="hidden"></canvas>
-            <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase tracking-widest">VITO Scouter Ready</div>
+            <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase">Scanner Ready</div>
         </div>
-        <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95 transition-all">Analyse Starten</button>
+        <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95">Analyse Starten</button>
     </div>
 
     <div class="glass p-6 rounded-[2.5rem]">
         <div class="flex justify-between items-center mb-6">
-            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase tracking-widest italic">Zentrale Inventur</h3>
+            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase italic">Inventar: Kühl</h3>
             <button id="resetBtn" class="text-[8px] border border-red-500 text-red-500 px-3 py-1.5 rounded-full font-black uppercase">Key Reset</button>
         </div>
         <div id="invList" class="space-y-4 text-xs italic">Sync läuft...</div>
@@ -57,7 +57,7 @@
         
         let GK = localStorage.getItem('GK');
         function askKey() {
-            let k = prompt("TACTICAL LOGIN: Bitte Google AI Key (tZGk) eingeben:");
+            let k = prompt("TACTICAL LOGIN: Bitte Google AI Key eingeben:");
             if (k) { localStorage.setItem('GK', k.trim()); location.reload(); }
         }
         if (!GK) askKey();
@@ -84,9 +84,9 @@
             document.getElementById('invList').innerHTML = list.map(i => `
                 <div class="flex justify-between items-center py-3 border-b border-gray-900/40">
                     <span class="font-black text-white uppercase italic text-xs tracking-tighter">${i.name}</span>
-                    <span class="text-[9px] text-gray-500 font-mono bg-black px-2 py-1 rounded border border-gray-800 uppercase italic">${i.mhd || 'OFFEN'}</span>
+                    <span class="text-[9px] text-gray-500 font-mono bg-black px-2 py-1 rounded border border-gray-800 uppercase">${i.mhd || 'OFFEN'}</span>
                 </div>
-            `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Einheit leer</p>';
+            `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Einheit Leer</p>';
         }
 
         const video = document.getElementById('v'), sBtn = document.getElementById('sBtn');
@@ -98,45 +98,43 @@
                     video.srcObject = s; video.classList.remove('hidden');
                     document.getElementById('cp').classList.add('hidden');
                     sBtn.innerText = "Einheit Scannen"; camOn = true;
-                } catch(e) { alert("Kamera-Fehler!"); }
+                } catch(e) { alert("Hardware-Fehler!"); }
             } else { analyze(); }
         });
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "KI-SCOUTER PRÜFT...";
+            sBtn.disabled = true; sBtn.innerText = "VITO ANALYSIERT...";
             const canvas = document.getElementById('canvas');
             canvas.width = 640; canvas.height = 480;
             canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
             const b64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
             
-            // MULTI-PFAD-STRATEGIE GEGEN NOT_FOUND
-            const models = ["gemini-1.5-flash", "gemini-1.5-flash-latest"];
-            const versions = ["v1", "v1beta"];
-            let done = false;
-
-            for (let v of versions) {
-                if (done) break;
-                for (let m of models) {
-                    if (done) break;
-                    try {
-                        const url = `https://generativelanguage.googleapis.com/${v}/models/${m}:generateContent?key=${GK}`;
-                        const res = await fetch(url, {
-                            method: "POST", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: "Was ist das? Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }] })
-                        });
-                        const d = await res.json();
-                        
-                        if (d.candidates) {
-                            const raw = d.candidates[0].content.parts[0].text;
-                            const data = JSON.parse(raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
-                            await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                            if(navigator.vibrate) navigator.vibrate(100);
-                            done = true;
-                        }
-                    } catch (e) { console.log(`Pfad ${v}/${m} fehlgeschlagen...`); }
-                }
+            // MULTI-MODEL-STRATEGIE
+            const endpoints = [
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`,
+                `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GK}`
+            ];
+            
+            let success = false;
+            for (let url of endpoints) {
+                if (success) break;
+                try {
+                    const res = await fetch(url, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: "Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }] })
+                    });
+                    const d = await res.json();
+                    if (d.candidates) {
+                        const raw = d.candidates[0].content.parts[0].text;
+                        const clean = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
+                        const data = JSON.parse(clean);
+                        await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                        success = true;
+                    }
+                } catch (e) { console.log("Pfad fehlgeschlagen..."); }
             }
-            if (!done) alert("Scanner-Fehler! Bitte stelle sicher, dass 'Generative Language API' in der Cloud Console aktiv ist!");
+            
+            if (!success) alert("Scanner-Fehler! Bitte stelle sicher, dass die API im RICHTIGEN Projekt aktiv ist.");
             sBtn.disabled = false; sBtn.innerText = "Einheit Scannen";
         }
 
