@@ -3,50 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VITO DIAGNOSTIC</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>VITO SAFE MODE</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; }
-        .error-log { color: #ff4b4b; font-family: monospace; font-size: 10px; padding: 20px; border: 1px solid #333; margin: 20px; border-radius: 10px; background: #110000; }
-        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        body { background-color: #050505; color: #00f2ff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .box { border: 2px solid #00f2ff; padding: 20px; border-radius: 15px; margin-top: 50px; background: #000; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+        .status-on { color: #00ff41; font-weight: bold; }
+        .status-off { color: #ff3e3e; font-weight: bold; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        h1 { font-style: italic; text-transform: uppercase; letter-spacing: -1px; margin: 0; }
+        .debug-area { background: #111; color: #888; font-family: monospace; font-size: 11px; padding: 15px; border-radius: 10px; margin-top: 20px; text-align: left; overflow-x: auto; }
+        button { background: #00f2ff; color: #000; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 20px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-    <div id="debug-display" class="hidden">
-        <h2 class="text-red-500 font-black p-5 uppercase">Tactical Error Detected:</h2>
-        <div id="error-content" class="error-log"></div>
-    </div>
+    <div class="box">
+        <h1>NABY KEÏTA <br>COMMAND HUB</h1>
+        <p style="font-size: 10px; color: #555; letter-spacing: 2px;">BAD HERSFELD | SAFE MODE V51.0</p>
+        
+        <hr style="border: 0; border-top: 1px solid #222; margin: 20px 0;">
 
-    <div id="main-app" class="p-4 opacity-0 transition-opacity duration-500">
-        <header class="flex justify-between items-start mb-8 border-l-4 border-[#00f2ff] pl-4 mt-4">
-            <div>
-                <h1 class="text-2xl font-black italic uppercase leading-none">NABY KEÏTA <br><span class="text-[#00f2ff]">COMMAND</span></h1>
-                <p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.3em] mt-1">BAD HERSFELD | DIAGNOSTIC V50.1</p>
-            </div>
-            <div class="text-right glass p-3 rounded-2xl">
-                <div id="status" class="text-[9px] font-black uppercase text-red-500">BOOTING ●</div>
-                <div id="temp" class="text-xl font-black italic">4.0°C</div>
-            </div>
-        </header>
+        <div id="connection-status">
+            STATUS: <span id="db-led" class="status-off">INITIALISIERE... ●</span>
+        </div>
 
-        <div class="glass p-10 rounded-[2.5rem] text-center text-gray-500 uppercase font-black text-[10px] tracking-widest">
-            Initialisiere taktische Schnittstelle...
+        <div id="main-ui" style="display: none;">
+            <p>System bereit für taktische Analyse.</p>
+            <button onclick="location.reload()">System Neustart</button>
         </div>
     </div>
 
+    <div class="debug-area" id="debug-log">
+        [SYSTEM LOG START]<br>
+    </div>
+
     <script>
-        // ERROR CATCHER: Schreibt Fehler direkt auf die Website
-        window.onerror = function(msg, url, line) {
-            document.getElementById('debug-display').classList.remove('hidden');
-            document.getElementById('error-content').innerText = "MSG: " + msg + "\nLINE: " + line;
-            return false;
-        };
+        const logArea = document.getElementById('debug-log');
+        function vLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            logArea.innerHTML += `[${time}] ${msg}<br>`;
+            console.log(msg);
+        }
 
-        console.log("VITO: Startet System-Check...");
+        vLog("VITO: Starte Safe-Mode Check...");
 
+        // Firebase Konfiguration
         const fbConfig = { 
             apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", 
             authDomain: "gen-lang-client-0348637849.firebaseapp.com", 
@@ -56,28 +59,30 @@
             appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" 
         };
 
+        window.onerror = function(msg, url, line) {
+            vLog(`<span style="color:red">ERROR: ${msg} (Zeile ${line})</span>`);
+            return false;
+        };
+
         try {
+            vLog("Versuche Firebase-Connect...");
             firebase.initializeApp(fbConfig);
             const db = firebase.firestore();
-            console.log("VITO: Firebase verbunden.");
-
-            // Wenn alles okay ist, App einblenden
-            setTimeout(() => {
-                document.getElementById('main-app').classList.remove('opacity-0');
-                document.getElementById('status').innerText = "Online ●";
-                document.getElementById('status').classList.remove('text-red-500');
-                document.getElementById('status').classList.add('text-green-500');
-                
-                // Hier den Key abfragen, falls nicht da
-                if (!localStorage.getItem('GRK')) {
-                    const key = prompt("VITO LOGIN: Groq API Key eingeben:");
-                    if (key) localStorage.setItem('GRK', key.trim());
-                }
-            }, 1000);
+            
+            vLog("Firebase SDK geladen. Prüfe Datenbank...");
+            
+            // Test-Snapshot um Verbindung zu erzwingen
+            db.collection("inventory").limit(1).get().then(() => {
+                vLog("<span style='color:#00ff41'>VERBINDUNG ERFOLGREICH!</span>");
+                document.getElementById('db-led').innerText = "ONLINE ●";
+                document.getElementById('db-led').className = "status-on";
+                document.getElementById('main-ui').style.display = "block";
+            }).catch(err => {
+                vLog(`<span style="color:red">DB-FEHLER: ${err.message}</span>`);
+            });
 
         } catch (e) {
-            document.getElementById('debug-display').classList.remove('hidden');
-            document.getElementById('error-content').innerText = "FIREBASE INIT ERROR: " + e.message;
+            vLog(`<span style="color:red">INIT-FEHLER: ${e.message}</span>`);
         }
     </script>
 </body>
