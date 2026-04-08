@@ -20,36 +20,36 @@
 
     <header class="flex justify-between items-start mb-6 border-l-4 border-[#00f2ff] pl-4">
         <div>
-            <h1 class="text-2xl font-black italic tracking-tighter uppercase leading-none">NABY KEÏTA <br><span class="neon-text">COMMAND</span></h1>
-            <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">BAD HERSFELD | TACTICAL HUB</p>
+            <h1 class="text-2xl font-black italic uppercase leading-none">NABY KEÏTA <br><span class="neon-text">COMMAND</span></h1>
+            <p class="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">BAD HERSFELD | ULTIMATE OPS</p>
         </div>
         <div class="text-right glass p-3 rounded-2xl border border-[#d4af37]/30">
-            <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Connecting ●</div>
+            <div id="dbStatus" class="text-[9px] font-black uppercase text-red-500 status-blink">Offline ●</div>
             <div id="liveTemp" class="text-xl font-black text-white italic">4.0°C</div>
         </div>
     </header>
 
-    <div class="flex gap-2 mb-6 text-center">
+    <div class="flex gap-2 mb-6">
         <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black zone-active uppercase">🧊 Kühl</button>
         <button onclick="setZone('FREEZER')" id="z-FREEZER" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600 uppercase">❄️ Frost</button>
         <button onclick="setZone('PANTRY')" id="z-PANTRY" class="flex-1 py-4 bg-[#111] rounded-2xl text-[10px] font-black text-gray-600 uppercase">📦 Vorrat</button>
     </div>
 
     <div class="glass p-5 rounded-[2.5rem] mb-6">
-        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-gray-900 flex items-center justify-center">
+        <div class="relative w-full aspect-video bg-black rounded-3xl overflow-hidden flex items-center justify-center">
             <video id="v" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
             <canvas id="canvas" class="hidden"></canvas>
-            <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase">Scanner Ready</div>
+            <div id="cp" class="text-center text-gray-700 font-black text-[10px] uppercase italic">System Ready</div>
         </div>
         <button id="sBtn" class="w-full py-5 mt-5 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-xl active:scale-95">Analyse Starten</button>
     </div>
 
     <div class="glass p-6 rounded-[2.5rem]">
         <div class="flex justify-between items-center mb-6">
-            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase italic">Inventar: Kühl</h3>
+            <h3 id="zT" class="text-[11px] font-black text-[#d4af37] uppercase italic">Bestand: Kühl</h3>
             <button id="resetBtn" class="text-[8px] border border-red-500 text-red-500 px-3 py-1.5 rounded-full font-black uppercase">Key Reset</button>
         </div>
-        <div id="invList" class="space-y-4 text-xs italic">Sync läuft...</div>
+        <div id="invList" class="space-y-4 text-xs italic">Synchronisiere...</div>
     </div>
 
     <script>
@@ -57,7 +57,7 @@
         
         let GK = localStorage.getItem('GK');
         function askKey() {
-            let k = prompt("TACTICAL LOGIN: Bitte Google AI Key eingeben:");
+            let k = prompt("FINAL LOGIN: Bitte den brandneuen Key (aus neuem Projekt) eingeben:");
             if (k) { localStorage.setItem('GK', k.trim()); location.reload(); }
         }
         if (!GK) askKey();
@@ -82,9 +82,9 @@
         function render() {
             const list = allStock.filter(i => i.zone === curZ);
             document.getElementById('invList').innerHTML = list.map(i => `
-                <div class="flex justify-between items-center py-3 border-b border-gray-900/40">
+                <div class="flex justify-between items-center py-3 border-b border-white/5">
                     <span class="font-black text-white uppercase italic text-xs tracking-tighter">${i.name}</span>
-                    <span class="text-[9px] text-gray-500 font-mono bg-black px-2 py-1 rounded border border-gray-800 uppercase">${i.mhd || 'OFFEN'}</span>
+                    <span class="text-[9px] text-gray-500 font-mono bg-white/5 px-2 py-1 rounded italic uppercase">${i.mhd || 'OFFEN'}</span>
                 </div>
             `).join('') || '<p class="text-center py-8 text-gray-800 font-black uppercase text-[9px]">Einheit Leer</p>';
         }
@@ -103,38 +103,36 @@
         });
 
         async function analyze() {
-            sBtn.disabled = true; sBtn.innerText = "VITO ANALYSIERT...";
+            sBtn.disabled = true; sBtn.innerText = "VITO ANALYSE...";
             const canvas = document.getElementById('canvas');
             canvas.width = 640; canvas.height = 480;
             canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
             const b64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
             
-            // MULTI-MODEL-STRATEGIE
-            const endpoints = [
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`,
-                `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GK}`
-            ];
-            
-            let success = false;
-            for (let url of endpoints) {
-                if (success) break;
-                try {
-                    const res = await fetch(url, {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: "Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }] })
-                    });
-                    const d = await res.json();
-                    if (d.candidates) {
-                        const raw = d.candidates[0].content.parts[0].text;
-                        const clean = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
-                        const data = JSON.parse(clean);
-                        await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                        success = true;
-                    }
-                } catch (e) { console.log("Pfad fehlgeschlagen..."); }
-            }
-            
-            if (!success) alert("Scanner-Fehler! Bitte stelle sicher, dass die API im RICHTIGEN Projekt aktiv ist.");
+            try {
+                // HIER IST DER FIX: Wir nutzen den v1beta Pfad mit gemini-1.5-flash
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GK}`;
+                const res = await fetch(url, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Antwort NUR JSON: { 'name': '...', 'mhd': '...' }" }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }] })
+                });
+                const d = await res.json();
+                
+                if (d.error) {
+                    alert("FEHLERCODE: " + d.error.status + "\nNACHRICHT: " + d.error.message);
+                    sBtn.disabled = false; sBtn.innerText = "Einheit Scannen";
+                    return;
+                }
+
+                if (d.candidates) {
+                    const raw = d.candidates[0].content.parts[0].text;
+                    const clean = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
+                    const data = JSON.parse(clean);
+                    await db.collection("inventory").add({ ...data, zone: curZ, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    if(navigator.vibrate) navigator.vibrate(100);
+                    alert("SCAN ERFOLGREICH: " + data.name);
+                }
+            } catch (e) { alert("System-Fehler: " + e.message); }
             sBtn.disabled = false; sBtn.innerText = "Einheit Scannen";
         }
 
