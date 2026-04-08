@@ -18,7 +18,7 @@
             background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%);
         }
 
-        /* --- GATEKEEPER / LOGIN SCREEN --- */
+        /* --- GATEKEEPER / BOOT SCREEN --- */
         #boot-screen {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             height: 90vh; text-align: center;
@@ -33,7 +33,7 @@
         .key-input {
             width: 90%; background: rgba(255,255,255,0.05); border: 1px solid var(--gold);
             padding: 15px; border-radius: 12px; color: #fff; font-size: 14px; text-align: center;
-            outline: none; margin-bottom: 20px; font-family: monospace;
+            outline: none; margin-bottom: 20px; font-family: monospace; box-sizing: border-box;
         }
         .key-input::placeholder { color: #555; }
         
@@ -75,7 +75,7 @@
         .cmd-btn { 
             width: 100%; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-d) 100%);
             border: none; padding: 22px; border-radius: 18px; color: #000; font-weight: 900; 
-            text-transform: uppercase; letter-spacing: 2px; margin-top: 15px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; margin-top: 15px; cursor: pointer; box-sizing: border-box;
         }
 
         /* DATA DISPLAY */
@@ -145,8 +145,15 @@
         let stock = [];
         let db;
 
-        // Firebase Config (Öffentliche Identifikatoren, sicher für Frontend)
-        const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
+        // Firebase Config
+        const cfg = { 
+            apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", 
+            authDomain: "gen-lang-client-0348637849.firebaseapp.com", 
+            projectId: "gen-lang-client-0348637849", 
+            storageBucket: "gen-lang-client-0348637849.firebasestorage.app", 
+            messagingSenderId: "1008937513696", 
+            appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" 
+        };
 
         const term = document.getElementById('term');
         const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
@@ -163,7 +170,7 @@
                 GRK = input;
                 startApp();
             } else {
-                alert("Ungültiger Key. Muss mit 'gsk_' beginnen.");
+                alert("Authentifizierung fehlgeschlagen. Key muss mit 'gsk_' beginnen.");
             }
         }
 
@@ -238,12 +245,12 @@
             can.getContext('2d').drawImage(v, 0, 0, 640, 640);
             
             try {
-                log("Kontaktiere Groq Llama 4 Scout...");
+                log("Kontaktiere Groq Llama-3.2-90b Vision...");
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                        model: "llama-3.2-90b-vision-preview",
                         messages: [{ role: "user", content: [
                             { type: "text", text: "Analysiere alle sichtbaren Produkte. Antworte AUSSCHLIESSLICH als JSON-Array: [ { \"name\": \"Produkt\", \"mhd\": \"Datum/Info\" } ]" },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.5) } }
@@ -253,9 +260,6 @@
 
                 if(!r.ok) {
                     const err = await r.json();
-                    if(err.error.message.includes("not found")) {
-                        throw new Error("Modell nicht gefunden. Bitte Key überprüfen.");
-                    }
                     throw new Error(err.error.message);
                 }
 
