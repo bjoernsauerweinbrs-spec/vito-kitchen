@@ -3,155 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0">
-    <meta http-equiv="expires" content="0">
-    <meta http-equiv="pragma" content="no-cache">
-    <title>VITO ELITE V57</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>VITO V58 GHOST BUSTER</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --vito-cyan: #00f2ff; --vito-gold: #d4af37; }
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass-panel { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 2.5rem; }
-        .neon-text { color: var(--vito-cyan); text-shadow: 0 0 15px rgba(0,242,255,0.6); }
-        .zone-active { background: var(--vito-gold) !important; color: #000 !important; font-weight: 900; box-shadow: 0 0 30px rgba(212,175,55,0.4); }
-        .scan-bar { position: absolute; width: 100%; height: 2px; background: var(--vito-cyan); top: 0; animation: scanning 2s linear infinite; box-shadow: 0 0 15px var(--vito-cyan); z-index: 20; }
-        @keyframes scanning { 0% { top: 0%; } 100% { top: 100%; } }
+        /* KEIN EXTERN-CSS: ALLES HIER DRIN */
+        body { background: #000; color: #00f2ff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; }
+        .vito-header { border-left: 5px solid #00f2ff; padding: 10px; text-align: left; margin-bottom: 20px; background: rgba(0,242,255,0.05); }
+        .vito-card { border: 1px solid #333; border-radius: 20px; padding: 15px; background: #0a0a0a; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .btn { width: 100%; padding: 18px; background: #00f2ff; color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; cursor: pointer; }
+        .btn:active { background: #008891; }
+        .log-box { font-family: monospace; font-size: 9px; color: #444; text-align: left; background: #050505; padding: 10px; border-radius: 10px; height: 80px; overflow-y: scroll; border: 1px solid #111; }
+        .inv-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #111; font-size: 13px; text-transform: uppercase; font-style: italic; }
+        .mhd-label { color: #d4af37; font-weight: bold; }
+        #v { width: 100%; border-radius: 15px; display: none; margin-bottom: 10px; }
     </style>
 </head>
-<body class="p-4 pb-28 max-w-md mx-auto">
+<body>
 
-    <header class="flex justify-between items-start mb-8 border-l-4 border-[#00f2ff] pl-5 mt-6">
-        <div>
-            <h1 class="text-3xl font-black italic uppercase leading-none tracking-tighter">VITO <br><span class="neon-text text-2xl">COMMAND</span></h1>
-            <p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-1">BAD HERSFELD | BUILD 57.0 FINAL</p>
-        </div>
-        <div class="text-right glass-panel p-3 px-5 border-[#d4af37]/30">
-            <div id="db-stat" class="text-[9px] font-black uppercase text-green-500 animate-pulse">HUB LIVE ●</div>
-            <div id="temp-val" class="text-2xl font-black italic">4.0°C</div>
-        </div>
-    </header>
-
-    <div class="flex gap-2 mb-8">
-        <button onclick="changeZone('FRIDGE')" id="btn-FRIDGE" class="flex-1 py-4 glass-panel text-[10px] font-black zone-active uppercase">🧊 Kühl</button>
-        <button onclick="changeZone('FREEZER')" id="btn-FREEZER" class="flex-1 py-4 glass-panel text-[10px] font-black text-gray-600 uppercase">❄️ Frost</button>
-        <button onclick="changeZone('PANTRY')" id="btn-PANTRY" class="flex-1 py-4 glass-panel text-[10px] font-black text-gray-600 uppercase">📦 Vorrat</button>
+    <div class="vito-header">
+        <h1 style="margin:0; font-style: italic; letter-spacing: -1px;">VITO <span style="color:#fff">COMMAND</span></h1>
+        <div style="font-size: 9px; font-weight: bold; opacity: 0.5;">BAD HERSFELD | BUILD V58.0-ELITE</div>
     </div>
 
-    <div class="glass-panel p-5 mb-8 relative">
-        <div class="relative w-full aspect-square bg-black rounded-[2rem] overflow-hidden border border-white/5">
-            <div id="laser" class="hidden scan-bar"></div>
-            <video id="viewfinder" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
-            <canvas id="snapshot" class="hidden"></canvas>
-            <div id="standby" class="h-full flex flex-col items-center justify-center opacity-20">
-                <span class="text-5xl mb-4">🚀</span>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em]">System Initialisiert</span>
-            </div>
-        </div>
-        <button id="actionBtn" class="w-full py-5 mt-6 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-[0_0_40px_rgba(0,242,255,0.3)] active:scale-95 transition-all">Scanner Starten</button>
+    <div class="vito-card">
+        <div id="cam-placeholder" style="padding: 40px 0; color: #222; font-weight: 900; font-size: 10px; letter-spacing: 3px;">SCOUTER STANDBY</div>
+        <video id="v" autoplay playsinline muted></video>
+        <canvas id="c" style="display:none;"></canvas>
+        <button id="sBtn" class="btn">Einheit Erfassen</button>
     </div>
 
-    <div class="glass-panel p-7 min-h-[250px]">
-        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-3">
-            <h3 id="zoneLabel" class="text-[11px] font-black text-[#d4af37] uppercase italic tracking-widest text-lg">Bestand: Kühl</h3>
-            <button onclick="resetAuth()" class="text-[8px] bg-red-900/30 text-red-500 px-3 py-1.5 rounded-full font-black uppercase">Key Reset</button>
-        </div>
-        <div id="inventory-list" class="space-y-5">
-            <div class="text-center py-10 text-gray-800 font-black text-[10px] uppercase">Lade Datenbank...</div>
-        </div>
+    <div class="vito-card" style="text-align: left;">
+        <div style="color: #d4af37; font-size: 11px; font-weight: 900; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Bestand Kühlzentrale</div>
+        <div id="inv-list" style="color: #888; font-size: 11px;">Synchronisiere mit Bad Hersfeld...</div>
     </div>
+
+    <div class="log-box" id="vito-log">
+        [12:47] System-Start eingeleitet...<br>
+    </div>
+
+    <button onclick="localStorage.removeItem('GRK'); location.reload();" style="background:none; border:none; color: #333; font-size: 8px; margin-top: 20px; text-decoration: underline;">API-KEY RESET</button>
 
     <script>
-        const fbConfig = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
-        let currentKey = localStorage.getItem('GRK'), currentZone = 'FRIDGE', allData = [];
+        const vLog = (m) => { document.getElementById('vito-log').innerHTML += `> ${m}<br>`; console.log(m); };
+        
+        const fbCfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
 
-        if(!currentKey) { 
-            currentKey = prompt("VITO SECURITY: Bitte neuen Groq Key eingeben (gsk_...):"); 
-            if(currentKey) localStorage.setItem('GRK', currentKey.trim()); 
+        let GRK = localStorage.getItem('GRK');
+        if(!GRK) {
+            vLog("Warte auf Key-Eingabe...");
+            GRK = prompt("VITO MASTER KEY (Groq) erforderlich:");
+            if(GRK) localStorage.setItem('GRK', GRK.trim());
         }
 
-        function resetAuth() { localStorage.removeItem('GRK'); location.reload(true); }
+        try {
+            firebase.initializeApp(fbCfg);
+            const db = firebase.firestore();
+            vLog("Firebase aktiv.");
 
-        firebase.initializeApp(fbConfig);
-        const db = firebase.firestore();
-
-        function startSync() {
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
-                allData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                updateUI();
-            });
-            db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
-                if(doc.exists) document.getElementById('temp-val').innerText = doc.data().temp + "°C";
-            });
-        }
-
-        function updateUI() {
-            const filtered = allData.filter(i => i.zone === currentZone);
-            document.getElementById('inventory-list').innerHTML = filtered.map(i => `
-                <div class="flex justify-between items-center py-3 border-b border-white/5 animate-pulse-slow">
-                    <div>
-                        <div class="font-black text-white uppercase italic text-sm tracking-tight">${i.name}</div>
-                        <div class="text-[8px] text-gray-600 font-bold uppercase tracking-widest mt-0.5">Bad Hersfeld Unit</div>
+                const items = snap.docs.map(d => d.data());
+                vLog(`${items.length} Einheiten synchronisiert.`);
+                document.getElementById('inv-list').innerHTML = items.map(i => `
+                    <div class="inv-item">
+                        <span>${i.name}</span>
+                        <span class="mhd-label">${i.mhd || 'OFFEN'}</span>
                     </div>
-                    <div class="text-[10px] text-[#d4af37] font-mono bg-[#d4af37]/10 px-3 py-1.5 rounded-xl border border-[#d4af37]/20 uppercase italic">
-                        ${i.mhd || 'OFFEN'}
-                    </div>
-                </div>
-            `).join('') || '<div class="text-center py-12 text-gray-800 font-black text-[10px] uppercase">Bereit für Scan</div>';
-        }
+                `).join('') || "Zentrale leer.";
+            }, err => vLog("DB-Fehler: " + err.message));
 
-        const video = document.getElementById('viewfinder'), actionBtn = document.getElementById('actionBtn');
-        let camActive = false;
+        } catch (e) { vLog("Fehler: " + e.message); }
 
-        actionBtn.addEventListener('click', async () => {
-            if(!camActive) {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                video.srcObject = s; video.classList.remove('hidden');
-                document.getElementById('standby').classList.add('hidden');
-                camActive = true; actionBtn.innerText = "Einheit Scannen";
-            } else { 
-                runAnalysis();
+        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn');
+        let camOn = false;
+
+        sBtn.onclick = async () => {
+            if(!camOn) {
+                vLog("Kamera-Anfrage...");
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    vid.srcObject = s; vid.style.display = "block";
+                    document.getElementById('cam-placeholder').style.display = "none";
+                    camOn = true; sBtn.innerText = "Scan auslösen";
+                    vLog("Kamera bereit.");
+                } catch(e) { vLog("Kamera-Fehler: " + e.message); }
+            } else {
+                analyze();
             }
-        });
+        };
 
-        async function runAnalysis() {
-            actionBtn.disabled = true; actionBtn.innerText = "KI ANALYSE...";
-            document.getElementById('laser').classList.remove('hidden');
-            const can = document.getElementById('snapshot'); 
-            can.width = 640; can.height = 640;
-            can.getContext('2d').drawImage(video, 0, 0, 640, 640);
+        async function analyze() {
+            sBtn.disabled = true; sBtn.innerText = "KI ANALYSE...";
+            vLog("Sende Bild an Groq...");
+            const can = document.getElementById('c'); can.width = 640; can.height = 640;
+            can.getContext('2d').drawImage(vid, 0, 0, 640, 640);
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Authorization": `Bearer ${currentKey}`, "Content-Type": "application/json" },
+                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "llama-3.2-11b-vision-preview",
                         messages: [{ role: "user", content: [
-                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'MHD' }" },
+                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'Datum' }" },
                             { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.6) } }
                         ]}]
                     })
                 });
                 const j = await res.json();
                 const d = JSON.parse(j.choices[0].message.content.match(/\{.*\}/s)[0]);
-                await db.collection("inventory").add({ ...d, zone: currentZone, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                vLog(`Erfasst: ${d.name}`);
+                await firebase.firestore().collection("inventory").add({ ...d, zone: "FRIDGE", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 if(navigator.vibrate) navigator.vibrate(100);
-            } catch(e) { alert("Analyse-Fehler: Key prüfen!"); }
-            
-            actionBtn.disabled = false; actionBtn.innerText = "Einheit Scannen";
-            document.getElementById('laser').classList.add('hidden');
+            } catch(e) { vLog("KI-Fehler: " + e.message); }
+            sBtn.disabled = false; sBtn.innerText = "Scan auslösen";
         }
-
-        window.changeZone = (z) => {
-            currentZone = z;
-            document.getElementById('zoneLabel').innerText = "Bestand: " + (z=='FRIDGE'?'Kühl':z=='FREEZER'?'Frost':'Vorrat');
-            ['FRIDGE','FREEZER','PANTRY'].forEach(id => document.getElementById('btn-'+id).classList.toggle('zone-active', id === z));
-            updateUI();
-        };
-
-        startSync();
     </script>
 </body>
 </html>
