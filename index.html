@@ -3,122 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VITO V59 FINAL</title>
+    <title>NABY KEÏTA COMMAND | ELITE V60</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        /* ABSOLUT STABILES DESIGN */
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; }
-        .box { border: 2px solid #ffee00; border-radius: 20px; padding: 20px; background: #0a0a0a; margin-bottom: 20px; }
-        .neon-yellow { color: #ffee00; font-weight: 900; text-transform: uppercase; font-style: italic; }
-        .btn { width: 100%; padding: 20px; background: #ffee00; color: #000; border: none; border-radius: 15px; font-weight: 900; font-size: 16px; cursor: pointer; }
-        .log-display { background: #111; color: #666; font-family: monospace; font-size: 10px; padding: 10px; border-radius: 10px; text-align: left; height: 100px; overflow-y: auto; margin-top: 10px; border: 1px solid #222; }
-        #v { width: 100%; border-radius: 15px; display: none; margin-bottom: 15px; background: #111; aspect-ratio: 1/1; object-fit: cover; }
-        .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        :root { --neon: #00f2ff; --gold: #d4af37; --bg: #050505; }
+        body { background-color: var(--bg); color: #fff; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 2.5rem; }
+        .neon-text { color: var(--neon); text-shadow: 0 0 15px rgba(0,242,255,0.4); }
+        .zone-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .zone-active { background: var(--gold) !important; color: #000 !important; font-weight: 900; box-shadow: 0 0 30px rgba(212,175,55,0.3); transform: scale(1.05); }
+        .scanner-glow { box-shadow: inset 0 0 50px rgba(0,242,255,0.1); border: 1px solid rgba(0,242,255,0.2); }
+        .scan-line { height: 2px; background: var(--neon); position: absolute; width: 100%; top: 0; animation: scan 2s linear infinite; z-index: 10; box-shadow: 0 0 15px var(--neon); }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="p-4 pb-32 max-w-md mx-auto">
 
-    <div class="box">
-        <h1 style="margin:0;">VITO <span class="neon-yellow">COMMAND</span></h1>
-        <div style="font-size: 10px; opacity: 0.5;">BAD HERSFELD | VERSION 59.0 FINAL</div>
+    <header class="flex justify-between items-start mb-8 border-l-4 border-[#00f2ff] pl-5 mt-6">
+        <div>
+            <h1 class="text-3xl font-black italic uppercase leading-none tracking-tighter">VITO <br><span class="neon-text text-2xl font-bold">COMMAND</span></h1>
+            <p class="text-[8px] text-gray-500 font-bold uppercase tracking-[0.4em] mt-1">BAD HERSFELD | UNIT V60.0</p>
+        </div>
+        <div class="text-right glass p-3 px-5 border-[#d4af37]/20">
+            <div id="db-status" class="text-[9px] font-black uppercase text-red-500">Connecting ●</div>
+            <div id="temp-display" class="text-2xl font-black italic tracking-tighter text-white">4.0°C</div>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-3 gap-2 mb-8">
+        <button onclick="setZone('FRIDGE')" id="z-FRIDGE" class="zone-btn py-4 glass text-[10px] font-black zone-active uppercase">🧊 Kühl</button>
+        <button onclick="setZone('FREEZER')" id="z-FREEZER" class="zone-btn py-4 glass text-[10px] font-black text-gray-600 uppercase">❄️ Frost</button>
+        <button onclick="setZone('PANTRY')" id="z-PANTRY" class="zone-btn py-4 glass text-[10px] font-black text-gray-600 uppercase">📦 Vorrat</button>
     </div>
 
-    <div class="box">
-        <video id="v" autoplay playsinline muted></video>
-        <div id="p-text" style="color:#333; font-weight: 900; padding: 20px;">SCOUTER BEREIT</div>
-        <canvas id="c" style="display:none;"></canvas>
-        <button id="sBtn" class="btn">EINHEIT ERFASSEN</button>
+    <div class="glass p-5 mb-8 relative overflow-hidden scanner-glow">
+        <div class="relative w-full aspect-square bg-black rounded-[2rem] overflow-hidden border border-white/5">
+            <div id="laser" class="hidden scan-line"></div>
+            <video id="video" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
+            <canvas id="canvas" class="hidden"></canvas>
+            <div id="placeholder" class="h-full flex flex-col items-center justify-center opacity-30">
+                <div class="text-5xl mb-4">🧿</div>
+                <div class="text-[10px] font-black uppercase tracking-[0.3em]">Scanner Ready</div>
+            </div>
+        </div>
+        <button id="scanBtn" class="w-full py-5 mt-6 bg-[#00f2ff] text-black font-black rounded-3xl uppercase text-sm shadow-[0_0_40px_rgba(0,242,255,0.2)] active:scale-95 transition-all">Scan Einleitung</button>
     </div>
 
-    <div class="box" style="text-align: left;">
-        <div class="neon-yellow" style="font-size: 12px; margin-bottom: 10px;">Bestand Zentrale:</div>
-        <div id="inv-list">Suche Verbindung...</div>
+    <div class="glass p-7 min-h-[300px]">
+        <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+            <h3 id="zoneLabel" class="text-[11px] font-black text-[#d4af37] uppercase italic tracking-widest text-lg">Bestand: Kühl</h3>
+            <button onclick="authReset()" class="text-[8px] bg-red-950/30 text-red-500 px-3 py-1.5 rounded-full font-black uppercase border border-red-500/20">Reset API</button>
+        </div>
+        <div id="inventory-list" class="space-y-4">
+            <div class="text-center py-12 text-gray-800 font-black text-[10px] uppercase italic tracking-widest">Initialisiere Datenstrom...</div>
+        </div>
     </div>
-
-    <div class="log-display" id="debug-log">
-        [SYSTEM START]...<br>
-    </div>
-
-    <button onclick="localStorage.removeItem('GRK'); location.reload();" style="color:#333; background:none; border:none; font-size:9px; text-decoration: underline; margin-top:10px;">API KEY RESET</button>
 
     <script>
-        const dLog = (m) => { document.getElementById('debug-log').innerHTML += `> ${m}<br>`; };
-        
+        // CONFIGURATION
         const fbCfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
+        
+        let GROQ_KEY = localStorage.getItem('GRK');
+        let currentZone = 'FRIDGE';
+        let stockData = [];
 
-        let GRK = localStorage.getItem('GRK');
-        if(!GRK) {
-            dLog("Key-Abfrage gestartet.");
-            GRK = prompt("VITO LOGIN: Bitte Groq API Key eingeben:");
-            if(GRK) localStorage.setItem('GRK', GRK.trim());
+        if(!GROQ_KEY) { 
+            GROQ_KEY = prompt("VITO LOGIN: Groq Key eingeben (gsk_...):"); 
+            if(GROQ_KEY) localStorage.setItem('GRK', GROQ_KEY.trim());
         }
 
-        try {
-            firebase.initializeApp(fbCfg);
-            const db = firebase.firestore();
-            dLog("Firebase-Zentrale verbunden.");
+        function authReset() { localStorage.removeItem('GRK'); location.reload(); }
 
+        // FIREBASE SYNC
+        firebase.initializeApp(fbCfg);
+        const db = firebase.firestore();
+
+        function connectDB() {
             db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(snap => {
-                const items = snap.docs.map(d => d.data());
-                dLog(`${items.length} Produkte im Bestand.`);
-                document.getElementById('inv-list').innerHTML = items.map(i => `
-                    <div class="item">
-                        <span>${i.name}</span>
-                        <span style="color:#ffee00">${i.mhd || 'OFFEN'}</span>
+                stockData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                document.getElementById('db-status').innerText = "Hub Live ●";
+                document.getElementById('db-status').className = "text-[9px] font-black uppercase text-green-500";
+                render();
+            });
+            db.collection("telemetry").doc("fridge_stats").onSnapshot(doc => {
+                if(doc.exists) document.getElementById('temp-display').innerText = doc.data().temp + "°C";
+            });
+        }
+
+        function render() {
+            const filtered = stockData.filter(i => i.zone === currentZone);
+            const container = document.getElementById('inventory-list');
+            container.innerHTML = filtered.map(i => `
+                <div class="flex justify-between items-center py-4 border-b border-white/5 fade-in">
+                    <div>
+                        <div class="font-black text-white uppercase italic text-sm tracking-tight">${i.name}</div>
+                        <div class="text-[8px] text-gray-600 font-bold uppercase tracking-widest mt-1">Security Unit Bad Hersfeld</div>
                     </div>
-                `).join('') || "Keine Einträge.";
-            }, err => dLog("DB-FEHLER: " + err.message));
+                    <div class="text-[10px] text-[#d4af37] font-mono bg-[#d4af37]/10 px-4 py-2 rounded-xl border border-[#d4af37]/20 uppercase italic font-bold">
+                        ${i.mhd || 'OFFEN'}
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center py-16 text-gray-800 font-black text-[10px] uppercase italic tracking-[0.2em]">Zentrale Leer</div>';
+        }
 
-        } catch (e) { dLog("CRITICAL INIT ERROR: " + e.message); }
+        // CAMERA & AI LOGIC
+        const video = document.getElementById('video'), scanBtn = document.getElementById('scanBtn');
+        let active = false;
 
-        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn'), pText = document.getElementById('p-text');
-        let camOn = false;
-
-        sBtn.onclick = async () => {
-            if(!camOn) {
-                dLog("Kamera-Zugriff angefordert...");
+        scanBtn.onclick = async () => {
+            if(!active) {
                 try {
-                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    vid.srcObject = s; vid.style.display = "block";
-                    pText.style.display = "none";
-                    camOn = true; sBtn.innerText = "JETZT SCANNEN";
-                    dLog("Scouter ist LIVE.");
-                } catch(e) { dLog("KAMERA-FEHLER: " + e.message); }
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    video.srcObject = stream;
+                    video.classList.remove('hidden');
+                    document.getElementById('placeholder').classList.add('hidden');
+                    active = true;
+                    scanBtn.innerText = "Produkt analysieren";
+                } catch(e) { alert("Kamera-Fehler: Bitte Berechtigung prüfen."); }
             } else {
-                runScan();
+                processAI();
             }
         };
 
-        async function runScan() {
-            sBtn.disabled = true; sBtn.innerText = "KI PRÜFT...";
-            dLog("Sende Daten an Groq...");
-            const can = document.getElementById('c'); can.width = 640; can.height = 640;
-            can.getContext('2d').drawImage(vid, 0, 0, 640, 640);
+        async function processAI() {
+            scanBtn.disabled = true;
+            scanBtn.innerText = "KI ANALYSE...";
+            document.getElementById('laser').classList.remove('hidden');
             
+            const canvas = document.getElementById('canvas');
+            canvas.width = 640; canvas.height = 640;
+            canvas.getContext('2d').drawImage(video, 0, 0, 640, 640);
+            const base64 = canvas.toDataURL('image/jpeg', 0.7);
+
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: "llama-3.2-11b-vision-preview",
-                        messages: [{ role: "user", content: [
-                            { type: "text", text: "JSON ONLY: { 'name': 'Produkt', 'mhd': 'Datum' }" },
-                            { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.6) } }
-                        ]}]
+                        messages: [{
+                            role: "user",
+                            content: [
+                                { type: "text", text: "JSON ONLY: { 'name': 'Produktname', 'mhd': 'Datum' }. Keine Einleitung." },
+                                { type: "image_url", image_url: { url: base64 } }
+                            ]
+                        }],
+                        temperature: 0.1
                     })
                 });
-                const j = await res.json();
-                const content = j.choices[0].message.content;
-                const d = JSON.parse(content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1));
+
+                const json = await response.json();
+                const content = json.choices[0].message.content;
+                const data = JSON.parse(content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1));
                 
-                dLog(`KI-Erfolg: ${d.name} erkannt.`);
-                await firebase.firestore().collection("inventory").add({ ...d, zone: "FRIDGE", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                if(navigator.vibrate) navigator.vibrate(100);
-            } catch(e) { dLog("KI-FEHLER: " + e.message); alert("Key prüfen!"); }
-            
-            sBtn.disabled = false; sBtn.innerText = "JETZT SCANNEN";
+                await db.collection("inventory").add({
+                    ...data,
+                    zone: currentZone,
+                    addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                const msg = new SpeechSynthesisUtterance("System-Eintrag: " + data.name);
+                msg.lang = 'de-DE'; window.speechSynthesis.speak(msg);
+
+            } catch (e) {
+                alert("KI-Verbindungsfehler. Bitte Key prüfen.");
+            }
+
+            scanBtn.disabled = false;
+            scanBtn.innerText = "Produkt analysieren";
+            document.getElementById('laser').classList.add('hidden');
         }
+
+        window.setZone = (z) => {
+            currentZone = z;
+            document.getElementById('zoneLabel').innerText = "Bestand: " + (z==='FRIDGE'?'Kühl':z==='FREEZER'?'Frost':'Vorrat');
+            ['FRIDGE','FREEZER','PANTRY'].forEach(id => {
+                document.getElementById('z-'+id).classList.toggle('zone-active', id === z);
+            });
+            render();
+        };
+
+        connectDB();
     </script>
 </body>
 </html>
