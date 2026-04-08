@@ -107,7 +107,6 @@
     </div>
 
     <script>
-        // CACHE BUSTER SCRIPT
         function forceRefresh() {
             window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
         }
@@ -115,7 +114,6 @@
         const term = document.getElementById('term');
         const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
 
-        // FIREBASE CONFIG
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
 
         let GRK = localStorage.getItem('GRK');
@@ -123,7 +121,6 @@
         let stock = [];
         let db;
 
-        // CHECK KEY BEIM START
         if (GRK && GRK.startsWith('gsk_')) {
             document.getElementById('gatekeeper').style.display = 'none';
             document.getElementById('main-app').style.display = 'block';
@@ -203,12 +200,12 @@
             try {
                 log("Verbindung zu Groq Vision...");
                 
-                // DEINE BLUEPRINT LOGIK
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
-                        model: "llama-3.2-11b-vision-preview",
+                        // DAS IST DAS OFFIZIELLE, FUNKTIONIERENDE MODELL
+                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
                         messages: [
                         { 
                             role: "user", 
