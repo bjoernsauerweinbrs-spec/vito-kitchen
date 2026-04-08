@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VITO V56 RED</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        /* RADIKALER FARBWECHSEL ZUR KONTROLLE: ROT */
+        body { background: #440000; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .card { background: #000; border: 3px solid #ff0000; border-radius: 25px; padding: 20px; box-shadow: 0 0 30px rgba(255,0,0,0.5); }
+        .v-box { width: 100%; aspect-ratio: 1/1; background: #111; border-radius: 20px; overflow: hidden; margin: 20px 0; }
+        .btn { width: 100%; padding: 20px; background: #ff0000; color: #fff; border: none; border-radius: 15px; font-weight: 900; font-size: 18px; }
+        #log { font-family: monospace; font-size: 10px; color: #ffaaaa; text-align: left; margin-top: 20px; height: 100px; overflow: auto; background: rgba(0,0,0,0.5); padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1 style="margin:0 italic;">VITO <span style="color:#ff0000">RED ALERT</span></h1>
+        <div style="font-size: 10px; opacity: 0.6;">VERSION 56.0 - CACHE BREAKER</div>
+
+        <div class="v-box">
+            <video id="v" autoplay playsinline muted style="width:100%; height:100%; object-fit: cover; display:none;"></video>
+            <div id="p-text" style="padding-top:40%;">KAMERA BEREIT</div>
+        </div>
+
+        <button id="sBtn" class="btn">SCANNER STARTEN</button>
+        
+        <div id="log">[SYSTEM START]...</div>
+    </div>
+
+    <script>
+        const logger = document.getElementById('log');
+        function write(msg) { logger.innerHTML += "<br>> " + msg; }
+
+        const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
+        
+        try {
+            firebase.initializeApp(cfg);
+            const db = firebase.firestore();
+            write("Firebase verbunden.");
+
+            db.collection("inventory").limit(1).get().then(() => {
+                write("Datenbank Bad Hersfeld erreicht.");
+            });
+        } catch(e) { write("Fehler: " + e.message); }
+
+        const vid = document.getElementById('v'), sBtn = document.getElementById('sBtn'), pText = document.getElementById('p-text');
+        
+        sBtn.onclick = async () => {
+            write("Kamera-Anfrage...");
+            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            vid.srcObject = s;
+            vid.style.display = "block";
+            pText.style.display = "none";
+            write("Kamera LIVE.");
+            sBtn.innerText = "PRODUKT ANALYSIEREN";
+            sBtn.onclick = () => { write("Analyse startet..."); /* Hier käme Groq Call */ };
+        };
+    </script>
+</body>
+</html>
