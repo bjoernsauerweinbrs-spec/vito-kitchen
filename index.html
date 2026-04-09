@@ -31,25 +31,24 @@
         .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
         .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
         
-        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
-
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
         .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; }
 
+        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
         .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
-        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 65px; overflow-y: auto; margin-top: 15px; }
-        .reset-link { color: #555; font-size: 10px; text-decoration: underline; cursor: pointer; margin-top: 10px; display: block; text-align: center; }
+        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
+        .reset-link { color: #555; font-size: 10px; text-decoration: underline; cursor: pointer; display: block; text-align: center; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <div id="gatekeeper">
         <div class="gold-brand">GERD 2.0</div>
-        <input type="password" id="api-input" style="width:80%; padding:15px; margin:20px 0; background:#111; border:1px solid var(--gold); color:#fff; text-align:center; border-radius:10px;" placeholder="Groq API Key">
+        <input type="password" id="api-input" style="width:80%; padding:15px; margin:20px 0; background:#111; border:1px solid var(--gold); color:#fff; text-align:center; border-radius:10px;" placeholder="Groq Command Key">
         <button onclick="saveKey()" class="cmd-btn" style="width:80%;">INITIALISIEREN</button>
         <div class="reset-link" onclick="resetKey()">Key zurücksetzen</div>
     </div>
@@ -122,7 +121,7 @@
                     log("Cloud-Sync: Aktiv (" + stock.length + " Artikel)");
                     render();
                 }, e => log("Cloud-Fehler: " + e.message, true));
-            } catch(e) { log("Start-Crash: " + e.message, true); }
+            } catch(e) { log("System-Initialisierung fehlgeschlagen.", true); }
         }
 
         function render() {
@@ -143,19 +142,30 @@
 
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
         async function toggleCamera() { if(!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none"; sBtn.innerText = "Jetzt Scannen"; stopBtn.style.display = "block"; log("Kamera bereit."); } catch(e) { log("Kamera-Fehler.", true); } } else { analyze(); } }
-        function stopCam() { if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; v.srcObject = null; } v.style.display = "none"; document.getElementById('p-text').style.display = "block"; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Hard-Reset OK."); }
+        function stopCam() { if (camStream) { camStream.getTracks().forEach(t => { t.stop(); t.enabled = false; }); camStream = null; v.srcObject = null; } v.style.display = "none"; document.getElementById('p-text').style.display = "block"; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Hard-Reset OK."); }
 
         async function analyze() {
             sBtn.disabled = true; sBtn.innerText = "Analysiere..."; laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
             can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             try {
-                // MODELL-FIX: llama-3.2-11b-vision-preview (Aktuellster stabiler Vision-Identifier bei Groq)
+                // MINIMAL-PATCH: LLAMA-4 SCOUT FIX
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
-                        model: "llama-3.2-11b-vision-preview",
-                        messages: [{ role: "user", content: [{ type: "text", text: "Nenne ALLES was du siehst. Sei extrem präzise. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
+                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                        messages: [{
+                            role: "system",
+                            content: "Du bist ein deutscher Kühlschrank-Scanner. Antworte IMMER mit gültigem JSON."
+                        },{
+                            role: "user",
+                            content: [
+                                { type: "text", text: "Erkenne alle Lebensmittel im Bild. Nenne wirklich alles, was du siehst. Gib NUR JSON zurück: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"?\"}]}" },
+                                { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.8) } }
+                            ]
+                        }],
+                        temperature: 0.1,
                         response_format: { type: "json_object" }
                     })
                 });
