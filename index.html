@@ -9,8 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
-        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
+        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .gold-brand { font-size: 32px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
         .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 20px 0; }
         .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 12px 0; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
@@ -24,7 +24,6 @@
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
-        .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
@@ -33,7 +32,9 @@
         .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
         .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
-        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 65px; overflow-y: auto; margin-top: 15px; }
+        .shop-check { width: 22px; height: 22px; margin-right: 15px; accent-color: #00ff41; }
+        .item-checked { text-decoration: line-through; opacity: 0.4; }
+        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -66,8 +67,8 @@
         </div>
 
         <div id="ui-chef" class="ai-panel">
-            <input type="text" id="chef-input" class="chef-input" style="width:100%; background:#000; border:1px solid var(--neon); color:#fff; padding:15px; border-radius:12px; margin-bottom:10px;" placeholder="Was kochen wir?">
-            <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon);">Karo AI Check</button>
+            <input type="text" id="chef-input" class="chef-input" style="width:100%; background:#000; border:1px solid var(--neon); color:#fff; padding:12px; border-radius:10px; margin-bottom:10px;" placeholder="Was kochen wir?">
+            <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon);">Karo AI Strategie</button>
             <div id="chef-out" class="recipe-box"></div>
         </div>
 
@@ -76,7 +77,7 @@
                 <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 Export</button>
                 <button onclick="finishShopping()" class="cmd-btn" style="background:#00ff41; color:#000;">✅ Gekauft</button>
             </div>
-            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Hersfeld Radar</button>
+            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Check</button>
             <div id="shop-out" class="recipe-box"></div>
         </div>
 
@@ -104,7 +105,7 @@
                 if (!firebase.apps.length) firebase.initializeApp(cfg);
                 db = firebase.firestore();
                 db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => { stock = s.docs.map(d => ({id: d.id, ...d.data()})); render(); }, e => log("DB Fehler: " + e.message, true));
-            } catch(e) { log("Firebase-Start fehlgeschlagen.", true); }
+            } catch(e) { log("Firebase Fehler.", true); }
         }
 
         function render() {
@@ -125,31 +126,39 @@
 
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
         async function toggleCamera() { if(!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none"; sBtn.innerText = "Scan Auslösen"; stopBtn.style.display = "block"; log("Kamera bereit."); } catch(e) { log("Kamera Fehler.", true); } } else { analyze(); } }
-        function stopCam() { if (camStream) { camStream.getTracks().forEach(t => { t.stop(); t.enabled = false; }); camStream = null; v.srcObject = null; } v.style.display = "none"; document.getElementById('p-text').style.display = "block"; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Hard-Reset aktiv."); }
+        
+        function stopCam() {
+            if (camStream) {
+                camStream.getTracks().forEach(t => { t.stop(); t.enabled = false; });
+                setTimeout(() => { camStream = null; v.srcObject = null; }, 300);
+            }
+            v.style.display = "none"; document.getElementById('p-text').style.display = "block";
+            sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Hardware Reset OK.");
+        }
 
         async function analyze() {
             sBtn.disabled = true; sBtn.innerText = "Analysiere..."; laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
             can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             try {
-                // MODELL-UPGRADE AUF 90B (AKTUELL)
+                // MODELL: llama-4-scout-17b-16e-instruct (DIE ERDBEEREN-VERSION)
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
-                        model: "llama-3.2-90b-vision-preview",
-                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das gesamte Bild. Identifiziere JEDES Produkt einzeln (Erdbeeren, Gurken, Äpfel). Zähle sie als Gruppe. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
+                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                        messages: [{ role: "user", content: [{ type: "text", text: "Identifiziere JEDES Produkt einzeln (Erdbeeren, Gurken, Äpfel). Zähle sie. Antworte NUR als JSON: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
                         response_format: { type: "json_object" }
                     })
                 });
-                if(!r.ok) throw new Error("API Fehler");
                 const j = await r.json(); const items = JSON.parse(j.choices[0].message.content).products;
                 for(let item of items) {
                     let qty = parseInt(item.anzahl) || 1, n = item.name;
                     await db.collection("inventory").add({ name: n, qty: qty, mhd: '?', zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    log(`ERFOLG: ${qty}x ${n} gespeichert.`);
+                    log(`✅ GESPEICHERT: ${qty}x ${n}`);
                 }
-            } catch(e) { log("Scan fehlgeschlagen.", true); }
-            sBtn.disabled = false; sBtn.innerText = "Scan Auslösen"; laser.style.display = "none";
+                sBtn.innerText = "✅ ERFOLG SPEICHERN";
+            } catch(e) { log("Scan Fehler: " + e.message, true); }
+            setTimeout(() => { sBtn.disabled = false; sBtn.innerText = "Scan Auslösen"; laser.style.display = "none"; }, 1500);
         }
 
         function toggleSmartEntnahme() {
@@ -166,7 +175,7 @@
 
         async function processVoiceRemoval(t) {
             const inv = JSON.stringify(stock.map(i => ({id: i.id, name: i.name, qty: i.qty||1})));
-            const p = `Bestand: ${inv}. Nutzer: "${t}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
+            const p = `Bestand: ${inv}. Nutzer: "${t}". Was entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
@@ -187,8 +196,8 @@
         async function runKaroChef() {
             const i = document.getElementById('chef-input').value;
             const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
-            const p = `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nutze den Bestand für Check. Rezept & Hersfeld-Preise.`;
             const out = document.getElementById('chef-out'); out.innerText = "Karo plant...";
+            const p = `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise.`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
