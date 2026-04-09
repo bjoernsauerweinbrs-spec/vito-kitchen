@@ -9,13 +9,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
         
-        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .gold-brand { font-size: 32px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
         
         .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 20px 0; }
-        .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 12px 0; border-radius: 10px; text-align: center; cursor: pointer; }
+        .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 12px 0; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
         .nav-node.active { background: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .nav-node.active span { color: #000; font-weight: 900; }
         .nav-node span { font-size: 7px; text-transform: uppercase; display: block; margin-top: 5px; color: #888; }
@@ -30,15 +30,18 @@
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
         .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
         
+        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
+
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
         .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; }
-
-        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
+        
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
         .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
+        .shop-check { width: 22px; height: 22px; margin-right: 15px; accent-color: #00ff41; }
+        .item-checked { text-decoration: line-through; opacity: 0.4; }
         .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
     </style>
 </head>
@@ -72,7 +75,7 @@
         </div>
 
         <div id="ui-chef" class="ai-panel">
-            <input type="text" id="chef-input" class="chef-input" style="width:100%; background:#000; border:1px solid var(--neon); color:#fff; padding:12px; border-radius:10px;" placeholder="Wunschgericht...">
+            <input type="text" id="chef-input" style="width:100%; background:#000; border:1px solid var(--neon); color:#fff; padding:15px; border-radius:12px; outline:none;" placeholder="Was kochen wir?">
             <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon); margin-top:10px;">Karo AI Strategie</button>
             <div id="chef-out" class="recipe-box"></div>
         </div>
@@ -82,7 +85,7 @@
                 <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 Export</button>
                 <button onclick="finishShopping()" class="cmd-btn" style="background:#00ff41; color:#000;">✅ Gekauft</button>
             </div>
-            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Radar</button>
+            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Check</button>
             <div id="shop-out" class="recipe-box"></div>
         </div>
 
@@ -100,7 +103,7 @@
 
     <script>
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
-        let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db, camStream = null;
+        let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db, camStream = null, isListening = false, recognition = null;
 
         if (GRK) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initFirebase(); }
         function saveKey() { const i = document.getElementById('api-input').value; if(i) { localStorage.setItem('GRK', i); location.reload(); } }
@@ -131,7 +134,6 @@
         async function addManual() { const n = document.getElementById('manual-name').value; const q = parseInt(document.getElementById('manual-qty').value) || 1; if(n) { await db.collection("inventory").add({ name: n, qty: q, zone: mode, mhd: '?', addedAt: firebase.firestore.FieldValue.serverTimestamp() }); document.getElementById('manual-name').value = ''; } }
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
-        // --- KAMERA FIX ---
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
         async function toggleCamera() {
             if(!camStream) {
@@ -139,13 +141,13 @@
                     camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none";
                     sBtn.innerText = "Jetzt Scannen"; stopBtn.style.display = "block"; log("Kamera bereit.");
-                } catch(e) { log("Kamera-Fehler.", true); }
+                } catch(e) { log("Kamera Fehler.", true); }
             } else { analyze(); }
         }
         function stopCam() {
             if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; v.srcObject = null; }
             v.style.display = "none"; document.getElementById('p-text').style.display = "block";
-            sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Kamera im Standby.");
+            sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Kamera gestoppt.");
         }
 
         async function analyze() {
@@ -157,7 +159,7 @@
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "llama-3.2-90b-vision-preview",
-                        messages: [{ role: "user", content: [{ type: "text", text: "Nenne ALLES was du siehst. Sei präzise. Gib NUR JSON: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
+                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das Bild. Nenne ALLES was du siehst (Lebensmittel). Sei extrem präzise. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
                         response_format: { type: "json_object" }
                     })
                 });
@@ -168,6 +170,78 @@
                 }
             } catch(e) { log("Scan Fehler.", true); }
             sBtn.disabled = false; sBtn.innerText = "Jetzt Scannen"; laser.style.display = "none";
+        }
+
+        function toggleSmartEntnahme() {
+            const btn = document.getElementById('voice-trigger-btn');
+            if(!isListening) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = "de-DE";
+                recognition.onstart = () => { isListening = true; btn.style.background = "red"; btn.innerText = "🛑 Mikro Stoppen"; };
+                recognition.onresult = (e) => { processVoiceRemoval(e.results[0][0].transcript); };
+                recognition.onend = () => { isListening = false; btn.style.background = ""; btn.innerText = "🎙️ Smarte Entnahme"; };
+                recognition.start();
+            } else { recognition.stop(); }
+        }
+
+        async function processVoiceRemoval(t) {
+            const inv = JSON.stringify(stock.map(i => ({id: i.id, name: i.name, qty: i.qty||1})));
+            const p = `Inventar: ${inv}. Nutzer sagt: "${t}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}` },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }], response_format: { type: "json_object" } })
+                });
+                const j = await r.json(); const updates = JSON.parse(j.choices[0].message.content).remove;
+                for(let u of updates) {
+                    let item = stock.find(i => i.id === u.id);
+                    if(item) {
+                        let nq = (item.qty || 1) - u.qty_to_remove;
+                        if(nq <= 0) await db.collection("inventory").doc(u.id).delete();
+                        else await db.collection("inventory").doc(u.id).update({ qty: nq });
+                    }
+                }
+            } catch(e) { log("Voice Fehler.", true); }
+        }
+
+        async function runKaroChef() {
+            const i = document.getElementById('chef-input').value;
+            const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
+            const out = document.getElementById('chef-out'); out.innerText = "Karo plant...";
+            const p = `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nutze den Bestand für Check. Nenne Rezept & Hersfeld-Preise.`;
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}` },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
+                });
+                const j = await r.json(); out.innerText = j.choices[0].message.content;
+            } catch(e) { out.innerText = "Fehler."; }
+        }
+
+        async function runShopAI() {
+            const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
+            const p = `Einkauf: ${sl}. Hersfeld Preis-Check.`;
+            const out = document.getElementById('shop-out'); out.innerText = "Check...";
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}` },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
+                });
+                const j = await r.json(); out.innerText = j.choices[0].message.content;
+            } catch(e) { out.innerText = "Fehler."; }
+        }
+
+        async function exportList() {
+            const sl = stock.filter(i => i.zone === 'SHOP');
+            let txt = "🛒 Gerd 2.0 Liste:\n" + sl.map(i => `- ${i.qty||1}x ${i.name}`).join("\n");
+            if(navigator.share) await navigator.share({ text: txt });
+            else { navigator.clipboard.writeText(txt); alert("Kopiert!"); }
+        }
+
+        async function finishShopping() {
+            const items = stock.filter(i => i.zone === 'SHOP' && i.checked);
+            for(let i of items) { await db.collection("inventory").doc(i.id).update({ zone: 'FRIDGE', checked: false }); }
+            log("Einkauf verstaut.");
         }
 
         const log = (m, isE=false) => { term.innerHTML += `<br><span class="${isE?'err':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
