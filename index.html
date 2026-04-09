@@ -5,8 +5,6 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GERD 2.0 | THE LEGACY</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
@@ -39,12 +37,10 @@
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
-        .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; }
+        .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 85px; padding: 5px; border-radius: 5px; text-align: center; }
         
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
         .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
-        .shop-check { width: 22px; height: 22px; margin-right: 15px; accent-color: #00ff41; }
-
         .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 10px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
         .reset-link { color: #555; font-size: 10px; text-decoration: underline; cursor: pointer; display: block; text-align: center; margin-top: 15px; }
     </style>
@@ -53,9 +49,10 @@
 
     <div id="gatekeeper">
         <div class="gold-brand">GERD 2.0</div>
-        <input type="password" id="api-input" style="width:80%; padding:15px; margin:10px 0; background:#111; border:1px solid var(--gold); color:#fff; text-align:center; border-radius:10px;" placeholder="Groq API Key">
-        <input type="text" id="team-input" style="width:80%; padding:15px; margin-bottom:20px; background:#111; border:1px solid var(--gold); color:#fff; text-align:center; border-radius:10px;" placeholder="Team-Name (z.B. Sauerwein)">
-        <button onclick="saveSetup()" class="cmd-btn" style="width:80%;">TEAM INITIALISIEREN</button>
+        <div style="color: #888; font-size: 10px; margin: 10px 0;">GOOGLE-CLOUD INITIALISIERUNG</div>
+        <input type="password" id="api-input" class="manual-input" style="width: 80%; margin-bottom: 10px;" placeholder="Groq API Key">
+        <input type="text" id="surl-input" class="manual-input" style="width: 80%; margin-bottom: 20px;" placeholder="Web-App URL (aus Apps Script)">
+        <button onclick="saveSetup()" class="cmd-btn" style="width:80%;">SATELLIT STARTEN</button>
     </div>
 
     <div id="main-app" style="display:none;">
@@ -74,7 +71,7 @@
                 <div id="laser" class="laser"></div>
                 <div id="scan-feedback"></div>
                 <video id="v" autoplay playsinline muted style="display:none;"></video>
-                <div id="p-text" style="padding-top:45%; text-align:center; color:#444; font-weight:900; letter-spacing:4px;">SYNC ACTIVE</div>
+                <div id="p-text" style="padding-top:45%; text-align:center; color:#444; font-weight:900; letter-spacing:4px;">GOOGLE SYNC READY</div>
             </div>
             <div class="btn-grid">
                 <button id="sBtn" onclick="toggleCamera()" class="cmd-btn">Kamera Starten</button>
@@ -83,52 +80,42 @@
         </div>
 
         <div id="ui-chef" class="ai-panel">
-            <input type="text" id="chef-input" class="manual-input" style="width:100%; border:1px solid var(--neon);" placeholder="Was kochen wir?">
-            <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon); margin-top:10px;">Karo AI Strategie</button>
+            <input type="text" id="chef-input" class="manual-input" style="width:100%; border:1px solid var(--neon);" placeholder="Karo AI Strategie...">
+            <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon); margin-top:10px;">Rezept Planen</button>
             <div id="chef-out" class="recipe-box"></div>
         </div>
 
         <div id="ui-shop" class="ai-panel">
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 Export</button>
-                <button onclick="finishShopping()" class="cmd-btn" style="background:#00ff41; color:#000;">✅ Gekauft</button>
-            </div>
-            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Check</button>
-            <div id="shop-out" class="recipe-box"></div>
+            <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 LISTE EXPORTIEREN</button>
         </div>
 
         <button id="voice-trigger-btn" onclick="toggleSmartEntnahme()" style="width:100%; background:rgba(0,242,255,0.1); border:1px solid var(--neon); padding:15px; border-radius:12px; color:var(--neon); font-weight:900; text-transform:uppercase; margin-bottom:15px; cursor:pointer;">🎙️ Smarte Entnahme</button>
 
         <div class="manual-add" id="manual-form">
-            <input type="text" id="manual-name" class="manual-input" placeholder="Produkt manuell...">
+            <input type="text" id="manual-name" class="manual-input" placeholder="Manuell hinzufügen...">
             <button onclick="addManual()" class="cmd-btn" style="width:auto; padding:0 20px;">+</button>
         </div>
 
         <div class="data-card"><div id="l-content"></div></div>
         <div class="terminal" id="term">> System online...</div>
-        <div class="reset-link" onclick="resetAll()">Reset System</div>
+        <div class="reset-link" onclick="localStorage.clear(); location.reload();">Reset Config & Cloud</div>
     </div>
 
     <script>
-        const fbConfig = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
-        let GRK = localStorage.getItem('GRK'), TEAM = localStorage.getItem('TEAM'), mode = 'FRIDGE', stock = [], db, camStream = null, scanLoop = null, scanPaused = false;
+        let GRK = localStorage.getItem('GRK'), SURL = localStorage.getItem('SURL'), mode = 'FRIDGE', stock = [], camStream = null, scanLoop = null, scanPaused = false;
         const recentScans = new Map();
 
-        if (GRK && TEAM) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initFirebase(); }
-        function saveSetup() { const k = document.getElementById('api-input').value, t = document.getElementById('team-input').value; if(k && t) { localStorage.setItem('GRK', k); localStorage.setItem('TEAM', t.trim().toLowerCase()); location.reload(); } }
-        function resetAll() { localStorage.clear(); location.reload(); }
+        if (GRK && SURL) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; refreshData(); setInterval(refreshData, 10000); }
+        function saveSetup() { const k = document.getElementById('api-input').value, s = document.getElementById('surl-input').value; if(k && s) { localStorage.setItem('GRK', k); localStorage.setItem('SURL', s.trim()); location.reload(); } }
 
-        function initFirebase() {
+        async function refreshData() {
             try {
-                if (!firebase.apps.length) firebase.initializeApp(fbConfig);
-                db = firebase.firestore();
-                db.collection("gerd_final_v145").onSnapshot(s => {
-                    const allData = s.docs.map(d => ({id: d.id, ...d.data()}));
-                    stock = allData.filter(i => i.team === TEAM).sort((a,b) => (b.ts || 0) - (a.ts || 0));
-                    log(`Sync: Team ${TEAM} (${stock.length} Artikel)`);
-                    render();
-                }, e => log("Cloud-Blockade!", true));
-            } catch(e) { log("Systemfehler.", true); }
+                const r = await fetch(SURL);
+                const data = await r.json();
+                stock = data.sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt));
+                log(`Google-Sync: OK (${stock.length} Artikel)`);
+                render();
+            } catch(e) { log("Sync Fehler", false); }
         }
 
         function render() {
@@ -138,16 +125,25 @@
             document.getElementById('ui-chef').style.display = (mode === 'CHEF' ? 'block' : 'none');
             document.getElementById('ui-shop').style.display = (mode === 'SHOP' ? 'block' : 'none');
             document.getElementById('manual-form').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'flex');
-            cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;">${mode==='SHOP'?`<input type="checkbox" class="shop-check" ${i.checked?'checked':''} onchange="toggleCheck('${i.id}', this.checked)">`:''}<span class="qty-badge">${i.qty || 1}x</span><div style="display:flex; flex-direction:column;"><b style="color:var(--gold); font-size:14px;">${i.name}</b><input type="text" class="mhd-edit" value="${i.mhd || '?'}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
+            cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;"><span class="qty-badge">${i.qty}x</span><div><b style="color:var(--gold);">${i.name}</b><br><input type="text" class="mhd-edit" value="${i.mhd}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
         }
 
-        async function updateMHD(id, v) { await db.collection("gerd_final_v145").doc(id).update({ mhd: v }); }
-        async function toggleCheck(id, c) { await db.collection("gerd_final_v145").doc(id).update({ checked: c }); }
-        async function del(id) { if(confirm("Löschen?")) await db.collection("gerd_final_v145").doc(id).delete(); }
-        async function addManual() { const n = document.getElementById('manual-name').value; if(n) { await db.collection("gerd_final_v145").add({ name: n, qty: 1, team: TEAM, zone: mode, mhd: '?', ts: Date.now() }); document.getElementById('manual-name').value = ''; } }
+        async function push(action, name, qty, mhd, id) {
+            await fetch(SURL, { method: "POST", mode: "no-cors", body: JSON.stringify({action, name, qty, mhd, zone: mode, id}) });
+            setTimeout(refreshData, 1500);
+        }
+
+        async function updateMHD(id, val) { log("Aktualisiere MHD..."); await push("updateMHD", "", 0, val, id); }
+        async function del(id) { if(confirm("Löschen?")) { await push("delete", "", 0, "", id); stock = stock.filter(i => i.id !== id); render(); } }
+        async function addManual() { const n = document.getElementById('manual-name').value; if(n) { const id = "ID"+Date.now(); await push("add", n, 1, "?", id); document.getElementById('manual-name').value = ''; } }
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
-        // --- MASTER SCAN LOGIC ---
+        function isDuplicate(name){
+            const key = name.toLowerCase(); const now = Date.now();
+            if(recentScans.has(key) && now - recentScans.get(key) < 30000) return true;
+            recentScans.set(key, now); return false;
+        }
+
         function pauseScanning(){ if(scanLoop){ clearInterval(scanLoop); scanLoop = null; } scanPaused = true; sBtn.innerText = "⏸️ Warten..."; }
         function resumeScanning(){ scanPaused = false; if(!scanLoop && camStream){ scanLoop = setInterval(()=>analyze(true), 2500); sBtn.innerText = "Dauerscan STOP"; } }
 
@@ -159,7 +155,10 @@
                 const div = document.createElement('div'); div.className = 'check-item';
                 div.innerHTML = `<div class="${hasMHD?'check-ok':'check-warn'}">${hasMHD?'✓':'!'}</div><div><b>${it.name}</b></div>`;
                 box.appendChild(div);
-                if(!hasMHD){ const neu = prompt(`MHD für "${it.name}"? (TT.MM.JJJJ)`); if(neu) it.mhd = neu; }
+                if(!hasMHD && !isDuplicate(it.name + "_asked")){
+                    const neu = prompt(`MHD für "${it.name}"?`);
+                    if(neu) it.mhd = neu;
+                }
             }
             setTimeout(()=>{ box.style.display='none'; resumeScanning(); }, 1200);
         }
@@ -180,10 +179,10 @@
             if(scanPaused) return; laser.style.display = "block";
             const shots = [];
             for (let i=0;i<3;i++){
-                const can = document.createElement('canvas'); can.width = 1280; can.height = 960;
-                can.getContext('2d').drawImage(v, 0, 0, 1280, 960);
+                const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
+                can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
                 shots.push({type:"image_url", image_url:{url: can.toDataURL('image/jpeg',0.7)}});
-                await new Promise(r=>setTimeout(r,300));
+                await new Promise(r=>setTimeout(r,400));
             }
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -199,8 +198,9 @@
                 if(items.length) {
                     await showFeedback(items);
                     for(let it of items){
-                        await db.collection("gerd_final_v145").add({ name: it.name, qty: it.anzahl||1, team: TEAM, zone: mode, mhd: it.mhd||'?', ts: Date.now() });
-                        log("✅ Gespeichert: " + it.name);
+                        const id = "SCAN" + Date.now();
+                        await push("add", it.name, it.anzahl, it.mhd, id);
+                        log("✅ Cloud: " + it.name);
                     }
                 }
             } catch(e) { log("API Fehler.", true); }
@@ -212,33 +212,16 @@
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Kühlschrank: [${inv}]. Wunsch: "${i}". Rezept & Preise.` }] })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Kühlschrank: [${inv}]. Wunsch: "${i}". Nenne Rezept & Preise.` }] })
                 });
                 const j = await r.json(); document.getElementById('chef-out').innerText = j.choices[0].message.content;
             } catch(e) { document.getElementById('chef-out').innerText = "KI Fehler."; }
         }
 
-        async function runShopAI() {
-            const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            try {
-                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Einkauf: ${sl}. Bad Hersfeld Preise.` }] })
-                });
-                const j = await r.json(); document.getElementById('shop-out').innerText = j.choices[0].message.content;
-            } catch(e) { log("Radar Fehler.", true); }
-        }
-
         function exportList() {
             const sl = stock.filter(i => i.zone === 'SHOP');
-            let txt = "🛒 Liste:\n" + sl.map(i => `- ${i.qty||1}x ${i.name}`).join("\n");
+            let txt = "🛒 Liste:\n" + sl.map(i => `- ${i.qty}x ${i.name}`).join("\n");
             if(navigator.share) navigator.share({ text: txt }); else alert("Exportiert!");
-        }
-
-        async function finishShopping() {
-            const items = stock.filter(i => i.zone === 'SHOP' && i.checked);
-            for(let i of items) { await db.collection("gerd_final_v145").doc(i.id).update({ zone: 'FRIDGE', checked: false }); }
-            log("Einkauf verstaut.");
         }
 
         function toggleSmartEntnahme() {
@@ -249,14 +232,13 @@
                 const t = e.results[0][0].transcript;
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Entnehme laut: "${t}" aus ${JSON.stringify(stock)}. JSON: { "remove": [ { "id": "ID" } ] }` }], response_format: { type: "json_object" } })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Lösche laut: "${t}" aus ${JSON.stringify(stock)}. JSON: { "remove": [ { "id": "ID" } ] }` }], response_format: { type: "json_object" } })
                 });
                 const j = await r.json(); const updates = JSON.parse(j.choices[0].message.content).remove;
-                for(let u of updates) { await db.collection("gerd_final_v145").doc(u.id).delete(); }
+                for(let u of updates) { await push("delete", "", 0, "", u.id); }
             };
             rec.onend = () => { btn.style.background = ""; }; rec.start();
         }
-
         const log = (m, isE=false) => { term.innerHTML += `<br><span style="color:${isE?'red':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
     </script>
 </body>
