@@ -11,8 +11,8 @@
         :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
         
-        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .gold-brand { font-size: 32px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
+        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        .gold-brand { font-size: 32px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); letter-spacing: -1px; }
         
         .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 20px 0; }
         .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 12px 0; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
@@ -141,13 +141,13 @@
                     camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none";
                     sBtn.innerText = "Jetzt Scannen"; stopBtn.style.display = "block"; log("Kamera bereit.");
-                } catch(e) { log("Kamera Fehler.", true); }
+                } catch(e) { log("Kamera-Fehler.", true); }
             } else { analyze(); }
         }
         function stopCam() {
-            if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; v.srcObject = null; }
+            if (camStream) { camStream.getTracks().forEach(t => { t.stop(); t.enabled = false; }); camStream = null; v.srcObject = null; }
             v.style.display = "none"; document.getElementById('p-text').style.display = "block";
-            sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Kamera gestoppt.");
+            sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Hardware Reset.");
         }
 
         async function analyze() {
@@ -155,20 +155,25 @@
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
             can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             try {
+                log("Sende Daten an Groq...");
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "llama-3.2-90b-vision-preview",
-                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das Bild. Nenne ALLES was du siehst (Lebensmittel). Sei extrem präzise. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
+                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das Bild. Nenne ALLES was du siehst. Gib NUR JSON: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
                         response_format: { type: "json_object" }
                     })
                 });
-                const j = await r.json(); const items = JSON.parse(j.choices[0].message.content).products;
+                if(!r.ok) throw new Error("API-Verbindung fehlgeschlagen.");
+                const j = await r.json(); 
+                const rawContent = j.choices[0].message.content;
+                const items = JSON.parse(rawContent).products;
+                
                 for(let item of items) {
                     await db.collection("inventory").add({ name: item.name, qty: item.anzahl || 1, mhd: item.mhd || '?', zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
                     log("✅ GESPEICHERT: " + item.name);
                 }
-            } catch(e) { log("Scan Fehler.", true); }
+            } catch(e) { log("Scan Fehler: Prüfe API-Key!", true); }
             sBtn.disabled = false; sBtn.innerText = "Jetzt Scannen"; laser.style.display = "none";
         }
 
@@ -189,7 +194,7 @@
             const p = `Inventar: ${inv}. Nutzer sagt: "${t}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${GRK}` },
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }], response_format: { type: "json_object" } })
                 });
                 const j = await r.json(); const updates = JSON.parse(j.choices[0].message.content).remove;
@@ -208,10 +213,10 @@
             const i = document.getElementById('chef-input').value;
             const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
             const out = document.getElementById('chef-out'); out.innerText = "Karo plant...";
-            const p = `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nutze den Bestand für Check. Nenne Rezept & Hersfeld-Preise.`;
+            const p = `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise.`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${GRK}` },
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
                 });
                 const j = await r.json(); out.innerText = j.choices[0].message.content;
@@ -220,11 +225,11 @@
 
         async function runShopAI() {
             const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            const p = `Einkauf: ${sl}. Hersfeld Preis-Check.`;
-            const out = document.getElementById('shop-out'); out.innerText = "Check...";
+            const p = `Einkauf: ${sl}. Bad Hersfeld Preis-Check.`;
+            const out = document.getElementById('shop-out'); out.innerText = "Radar läuft...";
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${GRK}` },
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
                 });
                 const j = await r.json(); out.innerText = j.choices[0].message.content;
