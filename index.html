@@ -22,7 +22,7 @@
         .nav-node.active span { color: #000; font-weight: 900; }
         .nav-node span { font-size: 7px; text-transform: uppercase; display: block; margin-top: 5px; color: #888; }
 
-        /* SCANNER FRAME */
+        /* SCOUTER UI */
         .scouter-frame { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.2); border-radius: 20px; padding: 15px; position: relative; margin-bottom: 20px; }
         .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 15px; overflow: hidden; position: relative; border: 1px solid #222; }
         video { width: 100%; height: 100%; object-fit: cover; }
@@ -35,22 +35,22 @@
         .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
         .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
         
-        /* DATA CARDS */
+        /* DATA DISPLAY */
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
-        .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; }
-
-        /* PANELS */
+        .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; outline: none; }
+        
+        /* AI PANELS */
         .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .recipe-box { margin-top: 15px; font-size: 12px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
+        .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
         .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
         
         .shop-check { width: 22px; height: 22px; margin-right: 15px; accent-color: #00ff41; }
         .item-checked { text-decoration: line-through; opacity: 0.4; }
 
-        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
+        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 65px; overflow-y: auto; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -112,6 +112,10 @@
         </div>
 
         <div class="terminal" id="term">> System online...</div>
+        
+        <div style="text-align:center; margin-top:10px;">
+            <button onclick="testFirebase()" style="background:none; border:none; color:var(--gold); font-size:10px; text-decoration:underline; cursor:pointer;">📡 Verbindung testen</button>
+        </div>
     </div>
 
     <script>
@@ -122,9 +126,26 @@
         function saveKey() { const i = document.getElementById('api-input').value; if(i) { localStorage.setItem('GRK', i); location.reload(); } }
 
         function initFirebase() {
-            if (!firebase.apps.length) firebase.initializeApp(cfg);
-            db = firebase.firestore();
-            db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => { stock = s.docs.map(d => ({id: d.id, ...d.data()})); render(); });
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(cfg);
+                db = firebase.firestore();
+                db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => { 
+                    stock = s.docs.map(d => ({id: d.id, ...d.data()})); 
+                    render(); 
+                }, e => log("FIREBASE-FEHLER: " + e.message, true));
+            } catch(e) { log("System-Initialisierung fehlgeschlagen.", true); }
+        }
+
+        async function testFirebase() {
+            log("Verbindung wird geprüft...");
+            try {
+                const t = await db.collection("inventory").add({ name: "System-Test", zone: "TEST", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                log("✅ VERBINDUNG STEHT! ID: " + t.id);
+                await db.collection("inventory").doc(t.id).delete();
+            } catch(e) {
+                log("❌ FEHLER: Datenbank nicht erreichbar. Firebase existiert nicht mehr!", true);
+                alert("Warnung: Deine Datenbank scheint gelöscht zu sein. Wir müssen eine neue erstellen!");
+            }
         }
 
         function render() {
@@ -134,86 +155,51 @@
             document.getElementById('manual-form').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'flex');
             document.getElementById('ui-chef').style.display = (mode === 'CHEF' ? 'block' : 'none');
             document.getElementById('ui-shop').style.display = (mode === 'SHOP' ? 'block' : 'none');
-            
-            cont.innerHTML = filtered.map(i => {
-                const isChecked = i.checked ? 'checked' : '';
-                const checkClass = i.checked ? 'item-checked' : '';
-                return `<div class="row"><div style="display:flex; align-items:center;">${mode==='SHOP'?`<input type="checkbox" class="shop-check" ${isChecked} onchange="toggleCheck('${i.id}', this.checked)">`:''}<span class="qty-badge">${i.qty || 1}x</span><div style="display:flex; flex-direction:column;"><b class="${checkClass}" style="color:var(--gold); font-size:14px;">${i.name}</b><input type="text" class="mhd-edit" value="${i.mhd || '?'}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-weight:bold; font-size:22px;">×</span></div>`;
-            }).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
+            cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;">${mode==='SHOP'?`<input type="checkbox" class="shop-check" ${i.checked?'checked':''} onchange="toggleCheck('${i.id}', this.checked)">`:''}<span class="qty-badge">${i.qty || 1}x</span><div style="display:flex; flex-direction:column;"><b style="color:var(--gold); font-size:14px;">${i.name}</b><input type="text" class="mhd-edit" value="${i.mhd || '?'}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-weight:bold; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
         }
 
         async function updateMHD(id, v) { await db.collection("inventory").doc(id).update({ mhd: v }); }
         async function toggleCheck(id, c) { await db.collection("inventory").doc(id).update({ checked: c }); }
         async function del(id) { if(confirm("Löschen?")) await db.collection("inventory").doc(id).delete(); }
-        async function addManual() {
-            const n = document.getElementById('manual-name').value;
-            const q = parseInt(document.getElementById('manual-qty').value) || 1;
-            if(n) { await db.collection("inventory").add({ name: n, qty: q, zone: mode, mhd: '?', addedAt: firebase.firestore.FieldValue.serverTimestamp() }); document.getElementById('manual-name').value = ''; }
-        }
+        async function addManual() { const n = document.getElementById('manual-name').value; const q = parseInt(document.getElementById('manual-qty').value) || 1; if(n) { await db.collection("inventory").add({ name: n, qty: q, zone: mode, mhd: '?', addedAt: firebase.firestore.FieldValue.serverTimestamp() }); document.getElementById('manual-name').value = ''; } }
 
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
-        // --- iOS OPTIMIZED CAMERA ---
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
-
         async function toggleCamera() {
             if(!camStream) {
                 try {
-                    const constraints = { video: { facingMode: 'environment', width: { ideal: 1024 }, height: { ideal: 1024 } } };
-                    camStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    v.srcObject = camStream;
-                    v.style.display = "block";
-                    document.getElementById('p-text').style.display = "none";
-                    sBtn.innerText = "Scan Auslösen";
-                    stopBtn.style.display = "block";
-                    log("Kamera aktiv.");
-                } catch(e) { log("Kamera-Fehler: " + e.message, true); }
-            } else {
-                analyze();
-            }
+                    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none";
+                    sBtn.innerText = "Scan Auslösen"; stopBtn.style.display = "block"; log("Kamera aktiv.");
+                } catch(e) { log("Kamera-Fehler.", true); }
+            } else { analyze(); }
         }
-
-        function stopCam() {
-            if (camStream) {
-                camStream.getTracks().forEach(track => { track.stop(); track.enabled = false; });
-                camStream = null;
-                v.srcObject = null;
-            }
-            v.style.display = "none";
-            document.getElementById('p-text').style.display = "block";
-            sBtn.innerText = "Kamera Starten";
-            stopBtn.style.display = "none";
-            log("Hard-Reset durchgeführt.");
-        }
+        function stopCam() { if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; v.srcObject = null; } v.style.display = "none"; document.getElementById('p-text').style.display = "block"; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Kamera gestoppt."); }
 
         async function analyze() {
             sBtn.disabled = true; sBtn.innerText = "Analysiere..."; laser.style.display = "block";
-            const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
-            can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
+            const can = document.createElement('canvas'); can.width = 1024; can.height = 1024; can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             try {
-                log("Suche Produkte (Äpfel, Gurken, Erdbeeren)...");
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das Bild. Identifiziere JEDES Produkt einzeln (Äpfel, Gurken, etc.). Zähle sie als Gruppen. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
+                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das Bild radikal. Identifiziere JEDES Produkt einzeln (Äpfel, Gurken, Erdbeeren). Zähle sie. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
                         response_format: { type: "json_object" }
                     })
                 });
                 const j = await r.json(); const items = JSON.parse(j.choices[0].message.content).products;
-                
                 for(let item of items) {
                     let qty = parseInt(item.anzahl) || 1, n = item.name;
-                    // SICHERES SPEICHERN IN FIREBASE
                     await db.collection("inventory").add({ name: n, qty: qty, mhd: '?', zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    log(`GESPEICHERT: ${qty}x ${n}`);
+                    log(`Sicher gespeichert: ${qty}x ${n}`);
                 }
-                log("Alle Daten sicher in der Cloud.");
-            } catch(e) { log("KI-Fehler.", true); }
+            } catch(e) { log("KI-Speicher-Fehler.", true); }
             sBtn.disabled = false; sBtn.innerText = "Scan Auslösen"; laser.style.display = "none";
         }
 
-        // --- VOICE ENGINE ---
+        // --- VOICE & AI MODULES (VOLLSTÄNDIG) ---
         function toggleSmartEntnahme() {
             const btn = document.getElementById('voice-trigger-btn');
             if(!isListening) {
@@ -243,16 +229,15 @@
                         else await db.collection("inventory").doc(u.id).update({ qty: nq });
                     }
                 }
-                window.speechSynthesis.speak(new SpeechSynthesisUtterance("Bestand aktualisiert."));
-            } catch(e) { log("Sprach-Fehler.", true); }
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance("Abgebucht."));
+            } catch(e) { log("Voice Fehler.", true); }
         }
 
-        // --- KARO AI & SHOP ---
         async function runKaroChef() {
             const i = document.getElementById('chef-input').value;
             const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
             const out = document.getElementById('chef-out'); out.innerText = "Karo liest Bestand...";
-            const p = `Karo Gourmet Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nutze den Bestand für Check. Nenne Rezept & Hersfeld-Preise (Lidl, Aldi, Rewe).`;
+            const p = `Du bist Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise (Lidl, Aldi, Rewe).`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
@@ -264,8 +249,8 @@
 
         async function runShopAI() {
             const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            const p = `Einkauf: ${sl}. Wo in Bad Hersfeld (Lidl Friedloser Str, Aldi, Rewe) am günstigsten?`;
-            const out = document.getElementById('shop-out'); out.innerText = "Check...";
+            const p = `Einkauf: ${sl}. Wo in Bad Hersfeld am günstigsten?`;
+            const out = document.getElementById('shop-out'); out.innerText = "Radar läuft...";
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
