@@ -26,6 +26,12 @@
         .laser { position: absolute; width: 100%; height: 3px; background: var(--neon); top: 0; animation: scan 2s linear infinite; display: none; box-shadow: 0 0 15px var(--neon); z-index: 100; }
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
 
+        /* FEEDBACK HUD */
+        .check-item { display:flex; align-items:center; margin:10px 0; font-size:15px; animation:pop .25s ease-out; color:#fff; }
+        .check-ok { width:26px; height:26px; border-radius:50%; background:#00ff41; color:#000; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:900; }
+        .check-warn { width:26px; height:26px; border-radius:50%; background:#ffaa00; color:#000; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:900; }
+        @keyframes pop { from{transform:scale(.5); opacity:0} to{transform:scale(1); opacity:1} }
+
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
         .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
@@ -40,7 +46,6 @@
         .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
         .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
-        
         .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
         .reset-link { color: #555; font-size: 10px; text-decoration: underline; cursor: pointer; display: block; text-align: center; margin-top: 15px; }
     </style>
@@ -68,6 +73,7 @@
         <div id="ui-scouter" class="scouter-frame">
             <div class="viewport">
                 <div id="laser" class="laser"></div>
+                <div id="scan-feedback" style="position:absolute; inset:0; display:none; justify-content:center; align-items:center; flex-direction:column; background:rgba(0,0,0,0.85); z-index:150; padding:20px;"></div>
                 <video id="v" autoplay playsinline muted style="display:none;"></video>
                 <div id="p-text" style="padding-top:45%; text-align:center; color:#444; font-weight:900; letter-spacing:4px;">CAMERA STANDBY</div>
             </div>
@@ -88,7 +94,7 @@
                 <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 Export</button>
                 <button onclick="finishShopping()" class="cmd-btn" style="background:#00ff41; color:#000;">✅ Gekauft</button>
             </div>
-            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Hersfeld Radar</button>
+            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Check</button>
             <div id="shop-out" class="recipe-box"></div>
         </div>
 
@@ -108,6 +114,7 @@
     <script>
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db, camStream = null, scanLoop = null;
+        const recentScans = new Map(); // Debounce-Map
 
         if (GRK) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initFirebase(); }
         function saveKey() { const i = document.getElementById('api-input').value; if(i) { localStorage.setItem('GRK', i); location.reload(); } }
@@ -134,6 +141,43 @@
             cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;">${mode==='SHOP'?`<input type="checkbox" class="shop-check" ${i.checked?'checked':''} onchange="toggleCheck('${i.id}', this.checked)">`:''}<span class="qty-badge">${i.qty || 1}x</span><div style="display:flex; flex-direction:column;"><b style="color:var(--gold); font-size:14px;">${i.name}</b><input type="text" class="mhd-edit" value="${i.mhd || '?'}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-weight:bold; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
         }
 
+        // --- SCAN LOGIC HELPERS ---
+        function isDuplicate(name){
+            const key = name.toLowerCase();
+            const now = Date.now();
+            if(recentScans.has(key) && now - recentScans.get(key) < 7000) return true; // 7 Sek Sperre
+            recentScans.set(key, now);
+            return false;
+        }
+
+        function showFeedback(items){
+            const box = document.getElementById('scan-feedback');
+            box.innerHTML = '';
+            box.style.display = 'flex';
+            items.forEach(it=>{
+                const div = document.createElement('div');
+                div.className = 'check-item';
+                const hasMHD = it.mhd && it.mhd!== '?' && /\d{2}\.\d{2}\.\d{4}/.test(it.mhd);
+                div.innerHTML = `<div class="${hasMHD?'check-ok':'check-warn'}">${hasMHD?'✓':'!'}</div>
+                  <div><b style="color:${hasMHD?'#00ff41':'#ffaa00'}">${it.name}</b> x${it.anzahl||1}
+                  <br><span style="font-size:11px;color:#aaa">${hasMHD?'MHD: '+it.mhd:'MHD fehlt – bitte nah ran oder tippen'}</span></div>`;
+                box.appendChild(div);
+
+                if(!hasMHD){
+                  setTimeout(()=>{
+                    const neu = prompt(`MHD für "${it.name}" fehlt. (TT.MM.JJJJ):`, '');
+                    if(neu) { it.mhd = neu; updateMHDByItemName(it.name, neu); }
+                  }, 400);
+                }
+            });
+            setTimeout(()=>{ box.style.display='none'; }, 2500);
+        }
+
+        async function updateMHDByItemName(name, mhd) {
+            const item = stock.find(s => s.name.toLowerCase() === name.toLowerCase() && s.zone === mode);
+            if(item) await db.collection("inventory").doc(item.id).update({ mhd: mhd });
+        }
+
         async function updateMHD(id, v) { await db.collection("inventory").doc(id).update({ mhd: v }); }
         async function toggleCheck(id, c) { await db.collection("inventory").doc(id).update({ checked: c }); }
         async function del(id) { if(confirm("Löschen?")) await db.collection("inventory").doc(id).delete(); }
@@ -142,15 +186,14 @@
 
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
 
-        // --- DAUERSCAN TOGGLE ---
         function toggleCamera() {
             if(!camStream) {
                 navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:1920}}})
                 .then(s=>{ camStream=v.srcObject=s; v.style.display="block"; document.getElementById('p-text').style.display="none";
                     sBtn.innerText="Jetzt Scannen"; stopBtn.style.display="block"; log("Kamera bereit."); });
             } else {
-                if(scanLoop){ clearInterval(scanLoop); scanLoop=null; sBtn.innerText="Jetzt Scannen"; laser.style.display="none"; log("Dauerscan gestoppt."); }
-                else { analyze(true); scanLoop=setInterval(()=>analyze(true), 3500); sBtn.innerText="Dauerscan STOP"; log("Dauerscan aktiv..."); }
+                if(scanLoop){ clearInterval(scanLoop); scanLoop=null; sBtn.innerText="Jetzt Scannen"; laser.style.display="none"; log("Dauerscan aus."); }
+                else { analyze(true); scanLoop=setInterval(()=>analyze(true), 3500); sBtn.innerText="Dauerscan STOP"; log("Dauerscan an..."); }
             }
         }
 
@@ -164,17 +207,9 @@
         async function analyze(multi = false) {
             if(!multi) sBtn.disabled = true;
             laser.style.display = "block";
-
-            // 3 Bilder schnell hintereinander aus leicht anderen Momenten
-            const shots = [];
-            for (let i=0;i<3;i++){
-                const can = document.createElement('canvas');
-                can.width = 1280; can.height = 960;
-                can.getContext('2d').drawImage(v, 0, 0, 1280, 960);
-                shots.push({type:"image_url", image_url:{url: can.toDataURL('image/jpeg',0.7)}});
-                await new Promise(r=>setTimeout(r,300)); 
-            }
-
+            const can = document.createElement('canvas');
+            can.width = 1280; can.height = 960;
+            can.getContext('2d').drawImage(v, 0, 0, 1280, 960);
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
@@ -183,53 +218,50 @@
                         model: "meta-llama/llama-4-scout-17b-16e-instruct",
                         messages: [{
                             role: "system",
-                            content: "Du bist ein deutscher Supermarkt-Scanner. Antworte IMMER mit gültigem JSON. Zähle JEDES sichtbare Produkt einzeln, auch wenn es teilweise verdeckt ist."
+                            content: "Du bist ein deutscher Supermarkt-Scanner. Antworte IMMER mit gültigem JSON."
                         },{
                             role: "user",
                             content: [
-                                {type:"text", text:"Bilderserie von einem Regal. Liste ALLE Lebensmittel, die du in IRGENDEINEM Bild erkennst. Für jedes: name (deutsch, exakt), anzahl (wie oft), mhd (TT.MM.JJJJ oder '?'). Gib NUR JSON: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"?\"}]} zurück."},
-                                ...shots
+                                {type:"text", text:"Liste ALLE Produkte im Bild. Format: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"TT.MM.JJJJ oder?\"}]}"},
+                                {type:"image_url", image_url:{url: can.toDataURL('image/jpeg',0.7)}}
                             ]
                         }],
-                        temperature: 0.0,
+                        temperature: 0,
                         response_format: { type: "json_object" }
                     })
                 });
-
-                if(!r.ok) throw new Error("Groq API Fehler");
                 const j = await r.json();
                 const items = JSON.parse(j.choices[0].message.content).products || [];
+                if(items.length) showFeedback(items);
 
                 for(let item of items){
+                    if(isDuplicate(item.name)) { log("↺ "+item.name+" (Debounce)"); continue; }
                     const exists = stock.find(s => s.name.toLowerCase() === item.name.toLowerCase() && s.zone === mode);
                     if(exists){
-                        await db.collection("inventory").doc(exists.id).update({ qty: (exists.qty||1) + (item.anzahl||1) });
+                        await db.collection("inventory").doc(exists.id).update({ qty: (exists.qty||1) + 1 });
                     } else {
                         await db.collection("inventory").add({
-                            name: item.name, qty: item.anzahl || 1, mhd: item.mhd || '?', zone: mode,
+                            name: item.name, qty: item.anzahl||1, mhd: item.mhd||'?', zone: mode,
                             addedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }
-                    log("✅ Erfasst: " + item.name);
+                    log("✅ GESPEICHERT: " + item.name);
                 }
-                if(!multi) sBtn.innerText = "✅ " + items.length + " Artikel";
             } catch(e) { log("Scan Fehler.", true); }
-
-            if(!multi) {
-                setTimeout(() => { sBtn.disabled = false; sBtn.innerText = "Jetzt Scannen"; laser.style.display = "none"; }, 1500);
-            }
+            laser.style.display = "none";
+            sBtn.disabled = false;
+            if(!multi) sBtn.innerText = "Jetzt Scannen";
         }
 
-        // --- HERSFELD & KARO (RECOVERY) ---
+        // --- RECOVERY HELPERS ---
         async function runKaroChef() {
             const i = document.getElementById('chef-input').value;
             const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
             const out = document.getElementById('chef-out'); out.innerText = "Karo plant...";
-            const p = `Du bist Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise (Lidl, Aldi, Rewe).`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise.` }] })
                 });
                 const j = await r.json(); out.innerText = j.choices[0].message.content;
             } catch(e) { out.innerText = "Fehler."; }
@@ -237,7 +269,7 @@
 
         async function runShopAI() {
             const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            const p = `Einkauf: ${sl}. Bad Hersfeld Preis-Check (Lidl Friedloser Str, Aldi, Rewe).`;
+            const p = `Einkauf: ${sl}. Bad Hersfeld Preis-Check.`;
             const out = document.getElementById('shop-out'); out.innerText = "Check...";
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -265,7 +297,7 @@
             const btn = document.getElementById('voice-trigger-btn');
             const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             rec.lang = "de-DE";
-            rec.onstart = () => { btn.style.background = "red"; btn.innerText = "Lerne Stimme..."; };
+            rec.onstart = () => { btn.style.background = "red"; btn.innerText = "Zuhören..."; };
             rec.onresult = (e) => { processVoiceRemoval(e.results[0][0].transcript); };
             rec.onend = () => { btn.style.background = ""; btn.innerText = "🎙️ Smarte Entnahme"; };
             rec.start();
@@ -273,11 +305,10 @@
 
         async function processVoiceRemoval(t) {
             const inv = JSON.stringify(stock.map(i => ({id: i.id, name: i.name, qty: i.qty||1})));
-            const p = `Inventar: ${inv}. Nutzer: "${t}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }], response_format: { type: "json_object" } })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Inventar: ${inv}. Nutzer: "${t}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }` }], response_format: { type: "json_object" } })
                 });
                 const j = await r.json(); const updates = JSON.parse(j.choices[0].message.content).remove;
                 for(let u of updates) {
