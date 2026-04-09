@@ -10,42 +10,29 @@
     <style>
         :root { --gold: #d4af37; --gold-l: #f9f295; --gold-d: #b88a44; --neon: #00f2ff; --bg: #010101; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 15px; background-image: radial-gradient(circle at 50% 0%, #151515 0%, #010101 100%); overflow-x: hidden; }
-        
         #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
         .gold-brand { font-size: 32px; font-weight: 900; font-style: italic; text-transform: uppercase; background: linear-gradient(to bottom, var(--gold-l) 0%, var(--gold) 40%, var(--gold-d) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); letter-spacing: -1px; }
-        
         .nav-hub { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 20px 0; }
         .nav-node { background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.2); padding: 12px 0; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.3s; }
         .nav-node.active { background: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,0.4); }
         .nav-node.active span { color: #000; font-weight: 900; }
         .nav-node span { font-size: 7px; text-transform: uppercase; display: block; margin-top: 5px; color: #888; }
-
         .scouter-frame { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.2); border-radius: 20px; padding: 15px; position: relative; margin-bottom: 20px; }
         .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 15px; overflow: hidden; position: relative; border: 1px solid #222; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .laser { position: absolute; width: 100%; height: 3px; background: var(--neon); top: 0; animation: scan 2s linear infinite; display: none; box-shadow: 0 0 15px var(--neon); z-index: 100; }
         @keyframes scan { from { top: 0%; } to { top: 100%; } }
-
-        /* FEEDBACK HUD */
+        #scan-feedback { position:absolute; inset:0; display:none; justify-content:center; align-items:center; flex-direction:column; background:rgba(0,0,0,0.85); z-index:150; padding:20px; text-align:center; }
         .check-item { display:flex; align-items:center; margin:10px 0; font-size:15px; animation:pop .25s ease-out; color:#fff; }
         .check-ok { width:26px; height:26px; border-radius:50%; background:#00ff41; color:#000; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:900; }
         .check-warn { width:26px; height:26px; border-radius:50%; background:#ffaa00; color:#000; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:900; }
         @keyframes pop { from{transform:scale(.5); opacity:0} to{transform:scale(1); opacity:1} }
-
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
-        .stop-btn { background: #333; color: #fff; border: 1px solid #555; display: none; }
-        .voice-btn { width: 100%; background: rgba(0,242,255,0.1); border: 1px solid var(--neon); padding: 15px; border-radius: 12px; color: var(--neon); font-weight: 900; text-transform: uppercase; margin-bottom: 15px; cursor: pointer; }
-        
         .data-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); min-height: 150px; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #111; }
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
         .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; }
-
-        .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
-        .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
-        .manual-input { flex: 1; background: #111; border: 1px solid var(--gold); border-radius: 8px; color: #fff; padding: 12px; outline: none; font-size: 13px; }
         .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; font-family: monospace; font-size: 9px; color: #00f2ff; height: 60px; overflow-y: auto; margin-top: 15px; }
         .reset-link { color: #555; font-size: 10px; text-decoration: underline; cursor: pointer; display: block; text-align: center; margin-top: 15px; }
     </style>
@@ -54,7 +41,7 @@
 
     <div id="gatekeeper">
         <div class="gold-brand">GERD 2.0</div>
-        <input type="password" id="api-input" style="width:80%; padding:15px; margin:20px 0; background:#111; border:1px solid var(--gold); color:#fff; text-align:center; border-radius:10px;" placeholder="Groq Command Key">
+        <input type="password" id="api-input" style="width:80%; padding:15px; margin:20px 0; background:#111; border:1px solid var(--gold); color:#fff; text-align:center; border-radius:10px;" placeholder="Groq API Key">
         <button onclick="saveKey()" class="cmd-btn" style="width:80%;">INITIALISIEREN</button>
         <div class="reset-link" onclick="resetKey()">Key zurücksetzen</div>
     </div>
@@ -73,23 +60,23 @@
         <div id="ui-scouter" class="scouter-frame">
             <div class="viewport">
                 <div id="laser" class="laser"></div>
-                <div id="scan-feedback" style="position:absolute; inset:0; display:none; justify-content:center; align-items:center; flex-direction:column; background:rgba(0,0,0,0.85); z-index:150; padding:20px;"></div>
+                <div id="scan-feedback"></div>
                 <video id="v" autoplay playsinline muted style="display:none;"></video>
                 <div id="p-text" style="padding-top:45%; text-align:center; color:#444; font-weight:900; letter-spacing:4px;">CAMERA STANDBY</div>
             </div>
             <div class="btn-grid">
                 <button id="sBtn" onclick="toggleCamera()" class="cmd-btn">Kamera Starten</button>
-                <button id="stopBtn" onclick="stopCam()" class="cmd-btn stop-btn">Kamera Stop</button>
+                <button id="stopBtn" onclick="stopCam()" class="cmd-btn" style="background:#333; color:#fff; display:none;">Kamera Stop</button>
             </div>
         </div>
 
-        <div id="ui-chef" class="ai-panel">
-            <input type="text" id="chef-input" class="manual-input" style="width:100%; border:1px solid var(--neon);" placeholder="Wunschgericht...">
+        <div id="ui-chef" class="ai-panel" style="display:none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+            <input type="text" id="chef-input" style="width:100%; background:#000; border:1px solid var(--neon); color:#fff; padding:15px; border-radius:12px; outline:none;" placeholder="Wunschgericht...">
             <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon); margin-top:10px;">Karo AI Strategie</button>
             <div id="chef-out" class="recipe-box"></div>
         </div>
 
-        <div id="ui-shop" class="ai-panel">
+        <div id="ui-shop" class="ai-panel" style="display:none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                 <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 Export</button>
                 <button onclick="finishShopping()" class="cmd-btn" style="background:#00ff41; color:#000;">✅ Gekauft</button>
@@ -98,7 +85,7 @@
             <div id="shop-out" class="recipe-box"></div>
         </div>
 
-        <button id="voice-trigger-btn" onclick="toggleSmartEntnahme()" class="voice-btn">🎙️ Smarte Entnahme (Sprechen)</button>
+        <button id="voice-trigger-btn" onclick="toggleSmartEntnahme()" style="width:100%; background:rgba(0,242,255,0.1); border:1px solid var(--neon); padding:15px; border-radius:12px; color:var(--neon); font-weight:900; text-transform:uppercase; margin-bottom:15px; cursor:pointer;">🎙️ Smarte Entnahme (Sprechen)</button>
 
         <div class="manual-add" id="manual-form">
             <input type="text" id="manual-name" class="manual-input" placeholder="Produkt manuell...">
@@ -114,7 +101,8 @@
     <script>
         const cfg = { apiKey: "AIzaSyDqqn39l6M8r-YC-R5utkwfG4En2OfUnpQ", authDomain: "gen-lang-client-0348637849.firebaseapp.com", projectId: "gen-lang-client-0348637849", storageBucket: "gen-lang-client-0348637849.firebasestorage.app", messagingSenderId: "1008937513696", appId: "1:1008937513696:web:1c0a2bc7792daf689a5685" };
         let GRK = localStorage.getItem('GRK'), mode = 'FRIDGE', stock = [], db, camStream = null, scanLoop = null;
-        const recentScans = new Map(); // Debounce-Map
+        const recentScans = new Map();
+        let scanPaused = false;
 
         if (GRK) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; initFirebase(); }
         function saveKey() { const i = document.getElementById('api-input').value; if(i) { localStorage.setItem('GRK', i); location.reload(); } }
@@ -141,41 +129,54 @@
             cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;">${mode==='SHOP'?`<input type="checkbox" class="shop-check" ${i.checked?'checked':''} onchange="toggleCheck('${i.id}', this.checked)">`:''}<span class="qty-badge">${i.qty || 1}x</span><div style="display:flex; flex-direction:column;"><b style="color:var(--gold); font-size:14px;">${i.name}</b><input type="text" class="mhd-edit" value="${i.mhd || '?'}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-weight:bold; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
         }
 
-        // --- SCAN LOGIC HELPERS ---
+        // --- SCAN LOGIC LOCKS ---
         function isDuplicate(name){
             const key = name.toLowerCase();
             const now = Date.now();
-            if(recentScans.has(key) && now - recentScans.get(key) < 7000) return true; // 7 Sek Sperre
+            if(recentScans.has(key) && now - recentScans.get(key) < 30000) return true;
             recentScans.set(key, now);
             return false;
         }
 
-        function showFeedback(items){
+        function pauseScanning(){
+            if(scanLoop){ clearInterval(scanLoop); scanLoop = null; }
+            scanPaused = true;
+            sBtn.innerText = "⏸️ Warten...";
+        }
+
+        function resumeScanning(){
+            scanPaused = false;
+            if(!scanLoop && camStream){
+                scanLoop = setInterval(()=>analyze(true), 2500);
+                sBtn.innerText = "Dauerscan STOP";
+            }
+        }
+
+        async function showFeedback(items){
+            pauseScanning();
             const box = document.getElementById('scan-feedback');
             box.innerHTML = '';
             box.style.display = 'flex';
-            items.forEach(it=>{
+
+            for(const it of items){
+                const hasMHD = it.mhd && it.mhd !== '?' && /\d{2}\.\d{2}\.\d{4}/.test(it.mhd);
                 const div = document.createElement('div');
                 div.className = 'check-item';
-                const hasMHD = it.mhd && it.mhd!== '?' && /\d{2}\.\d{2}\.\d{4}/.test(it.mhd);
                 div.innerHTML = `<div class="${hasMHD?'check-ok':'check-warn'}">${hasMHD?'✓':'!'}</div>
-                  <div><b style="color:${hasMHD?'#00ff41':'#ffaa00'}">${it.name}</b> x${it.anzahl||1}
-                  <br><span style="font-size:11px;color:#aaa">${hasMHD?'MHD: '+it.mhd:'MHD fehlt – bitte nah ran oder tippen'}</span></div>`;
+                  <div><b style="color:${hasMHD?'#00ff41':'#ffaa00'}">${it.name}</b> x${it.anzahl||1}</div>`;
                 box.appendChild(div);
+            }
 
-                if(!hasMHD){
-                  setTimeout(()=>{
-                    const neu = prompt(`MHD für "${it.name}" fehlt. (TT.MM.JJJJ):`, '');
-                    if(neu) { it.mhd = neu; updateMHDByItemName(it.name, neu); }
-                  }, 400);
+            for(const it of items){
+                const hasMHD = it.mhd && it.mhd !== '?' && /\d{2}\.\d{2}\.\d{4}/.test(it.mhd);
+                if(!hasMHD && !isDuplicate(it.name + "_asked")){
+                    recentScans.set((it.name + "_asked").toLowerCase(), Date.now());
+                    const neu = prompt(`MHD für "${it.name}" fehlt.\nBitte eingeben (TT.MM.JJJJ) oder abbrechen:`);
+                    if(neu && /\d{2}\.\d{2}\.\d{4}/.test(neu)) it.mhd = neu;
                 }
-            });
-            setTimeout(()=>{ box.style.display='none'; }, 2500);
-        }
+            }
 
-        async function updateMHDByItemName(name, mhd) {
-            const item = stock.find(s => s.name.toLowerCase() === name.toLowerCase() && s.zone === mode);
-            if(item) await db.collection("inventory").doc(item.id).update({ mhd: mhd });
+            setTimeout(()=>{ box.style.display='none'; resumeScanning(); }, 800);
         }
 
         async function updateMHD(id, v) { await db.collection("inventory").doc(id).update({ mhd: v }); }
@@ -192,8 +193,8 @@
                 .then(s=>{ camStream=v.srcObject=s; v.style.display="block"; document.getElementById('p-text').style.display="none";
                     sBtn.innerText="Jetzt Scannen"; stopBtn.style.display="block"; log("Kamera bereit."); });
             } else {
-                if(scanLoop){ clearInterval(scanLoop); scanLoop=null; sBtn.innerText="Jetzt Scannen"; laser.style.display="none"; log("Dauerscan aus."); }
-                else { analyze(true); scanLoop=setInterval(()=>analyze(true), 3500); sBtn.innerText="Dauerscan STOP"; log("Dauerscan an..."); }
+                if(scanLoop){ clearInterval(scanLoop); scanLoop=null; sBtn.innerText="Jetzt Scannen"; laser.style.display="none"; log("Scan aus."); }
+                else { analyze(true); scanLoop=setInterval(()=>analyze(true), 3500); sBtn.innerText="Dauerscan STOP"; log("Dauerscan aktiv..."); }
             }
         }
 
@@ -205,6 +206,7 @@
         }
 
         async function analyze(multi = false) {
+            if(scanPaused) return;
             if(!multi) sBtn.disabled = true;
             laser.style.display = "block";
             const can = document.createElement('canvas');
@@ -222,7 +224,7 @@
                         },{
                             role: "user",
                             content: [
-                                {type:"text", text:"Liste ALLE Produkte im Bild. Format: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"TT.MM.JJJJ oder?\"}]}"},
+                                {type:"text", text:"Erkenne Lebensmittel. Gib NUR JSON: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"TT.MM.JJJJ oder?\"}]}"},
                                 {type:"image_url", image_url:{url: can.toDataURL('image/jpeg',0.7)}}
                             ]
                         }],
@@ -232,20 +234,22 @@
                 });
                 const j = await r.json();
                 const items = JSON.parse(j.choices[0].message.content).products || [];
-                if(items.length) showFeedback(items);
-
-                for(let item of items){
-                    if(isDuplicate(item.name)) { log("↺ "+item.name+" (Debounce)"); continue; }
-                    const exists = stock.find(s => s.name.toLowerCase() === item.name.toLowerCase() && s.zone === mode);
-                    if(exists){
-                        await db.collection("inventory").doc(exists.id).update({ qty: (exists.qty||1) + 1 });
-                    } else {
-                        await db.collection("inventory").add({
-                            name: item.name, qty: item.anzahl||1, mhd: item.mhd||'?', zone: mode,
-                            addedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                
+                if(items.length) {
+                    await showFeedback(items);
+                    for(let item of items){
+                        if(isDuplicate(item.name)) continue;
+                        const exists = stock.find(s => s.name.toLowerCase() === item.name.toLowerCase() && s.zone === mode);
+                        if(exists){
+                            await db.collection("inventory").doc(exists.id).update({ qty: (exists.qty||1) + 1 });
+                        } else {
+                            await db.collection("inventory").add({
+                                name: item.name, qty: item.anzahl||1, mhd: item.mhd||'?', zone: mode,
+                                addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                        log("✅ Speichere: " + item.name);
                     }
-                    log("✅ GESPEICHERT: " + item.name);
                 }
             } catch(e) { log("Scan Fehler.", true); }
             laser.style.display = "none";
@@ -253,7 +257,7 @@
             if(!multi) sBtn.innerText = "Jetzt Scannen";
         }
 
-        // --- RECOVERY HELPERS ---
+        // --- AI MODULES ---
         async function runKaroChef() {
             const i = document.getElementById('chef-input').value;
             const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
@@ -261,23 +265,21 @@
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise.` }] })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Bestand: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise.` }] })
                 });
                 const j = await r.json(); out.innerText = j.choices[0].message.content;
-            } catch(e) { out.innerText = "Fehler."; }
+            } catch(e) { out.innerText = "KI Fehler."; }
         }
 
         async function runShopAI() {
             const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            const p = `Einkauf: ${sl}. Bad Hersfeld Preis-Check.`;
-            const out = document.getElementById('shop-out'); out.innerText = "Check...";
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: p }] })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Einkauf: ${sl}. Bad Hersfeld Preis-Check.` }] })
                 });
-                const j = await r.json(); out.innerText = j.choices[0].message.content;
-            } catch(e) { out.innerText = "Fehler."; }
+                const j = await r.json(); document.getElementById('shop-out').innerText = j.choices[0].message.content;
+            } catch(e) { log("Shop AI Fehler.", true); }
         }
 
         async function exportList() {
@@ -308,7 +310,7 @@
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Inventar: ${inv}. Nutzer: "${t}". Was wurde entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }` }], response_format: { type: "json_object" } })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Inventar: ${inv}. Nutzer: "${t}". Was entnommen? JSON: { "remove": [ { "id": "db-id", "qty_to_remove": 1 } ] }` }], response_format: { type: "json_object" } })
                 });
                 const j = await r.json(); const updates = JSON.parse(j.choices[0].message.content).remove;
                 for(let u of updates) {
