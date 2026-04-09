@@ -21,14 +21,10 @@
         .scouter-frame { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.2); border-radius: 20px; padding: 15px; position: relative; margin-bottom: 20px; }
         .viewport { width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 15px; overflow: hidden; position: relative; border: 1px solid #222; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .laser { position: absolute; width: 100%; height: 3px; background: var(--neon); top: 0; animation: scan 2s linear infinite; display: none; box-shadow: 0 0 15px var(--neon); z-index: 100; }
-        @keyframes scan { from { top: 0%; } to { top: 100%; } }
-
-        #scan-feedback { position:absolute; inset:0; display:none; justify-content:center; align-items:center; flex-direction:column; background:rgba(0,0,0,0.85); z-index:150; padding:20px; text-align:center; }
-        .check-item { display:flex; align-items:center; margin:10px 0; font-size:15px; animation:pop .25s ease-out; color:#fff; }
+        
+        #scan-feedback { position:absolute; inset:0; display:none; justify-content:center; align-items:center; flex-direction:column; background:rgba(0,0,0,0.95); z-index:150; padding:20px; text-align:center; }
+        .check-item { display:flex; align-items:center; margin:10px 0; font-size:15px; color:#fff; }
         .check-ok { width:26px; height:26px; border-radius:50%; background:#00ff41; color:#000; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:900; }
-        .check-warn { width:26px; height:26px; border-radius:50%; background:#ffaa00; color:#000; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:900; }
-        @keyframes pop { from{transform:scale(.5); opacity:0} to{transform:scale(1); opacity:1} }
 
         .cmd-btn { width: 100%; background: var(--gold); border: none; padding: 16px; border-radius: 12px; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
         .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
@@ -49,9 +45,9 @@
 
     <div id="gatekeeper">
         <div class="gold-brand">GERD 2.0</div>
-        <div style="color: #888; font-size: 10px; margin: 10px 0;">GOOGLE-CLOUD INITIALISIERUNG</div>
+        <div style="color: #888; font-size: 10px; margin: 10px 0;">V152.0 FULL LEGACY MASTER</div>
         <input type="password" id="api-input" class="manual-input" style="width: 80%; margin-bottom: 10px;" placeholder="Groq API Key">
-        <input type="text" id="surl-input" class="manual-input" style="width: 80%; margin-bottom: 20px;" placeholder="Web-App URL (aus Apps Script)">
+        <input type="text" id="surl-input" class="manual-input" style="width: 80%; margin-bottom: 20px;" placeholder="Google Web-App URL">
         <button onclick="saveSetup()" class="cmd-btn" style="width:80%;">SATELLIT STARTEN</button>
     </div>
 
@@ -68,25 +64,26 @@
 
         <div id="ui-scouter" class="scouter-frame">
             <div class="viewport">
-                <div id="laser" class="laser"></div>
                 <div id="scan-feedback"></div>
                 <video id="v" autoplay playsinline muted style="display:none;"></video>
-                <div id="p-text" style="padding-top:45%; text-align:center; color:#444; font-weight:900; letter-spacing:4px;">GOOGLE SYNC READY</div>
+                <div id="p-text" style="padding-top:45%; text-align:center; color:#444; font-weight:900; letter-spacing:4px;">GOOGLE CLOUD SYNC</div>
             </div>
-            <div class="btn-grid">
-                <button id="sBtn" onclick="toggleCamera()" class="cmd-btn">Kamera Starten</button>
-                <button id="stopBtn" onclick="stopCam()" class="cmd-btn" style="background:#333; color:#fff; display:none;">Kamera Stop</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                <button id="camBtn" onclick="toggleCamera()" class="cmd-btn" style="background: #222; color: #fff;">Kamera An/Aus</button>
+                <button id="scanBtn" onclick="takeSnapshot()" class="cmd-btn" style="display: none;">FOTO & ANALYSE</button>
             </div>
         </div>
 
         <div id="ui-chef" class="ai-panel">
-            <input type="text" id="chef-input" class="manual-input" style="width:100%; border:1px solid var(--neon);" placeholder="Karo AI Strategie...">
-            <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon); margin-top:10px;">Rezept Planen</button>
+            <input type="text" id="chef-input" class="manual-input" style="width:100%; border:1px solid var(--neon);" placeholder="Was kochen wir?">
+            <button onclick="runKaroChef()" class="cmd-btn" style="background:var(--neon); margin-top:10px;">Gourmet Strategie</button>
             <div id="chef-out" class="recipe-box"></div>
         </div>
 
         <div id="ui-shop" class="ai-panel">
-            <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000;">📤 LISTE EXPORTIEREN</button>
+            <button onclick="exportList()" class="cmd-btn" style="background:#fff; color:#000; margin-bottom: 10px;">📤 Export an iPhone</button>
+            <button onclick="runShopAI()" class="cmd-btn" style="background:var(--neon);">Bad Hersfeld Check</button>
+            <div id="shop-out" class="recipe-box"></div>
         </div>
 
         <button id="voice-trigger-btn" onclick="toggleSmartEntnahme()" style="width:100%; background:rgba(0,242,255,0.1); border:1px solid var(--neon); padding:15px; border-radius:12px; color:var(--neon); font-weight:900; text-transform:uppercase; margin-bottom:15px; cursor:pointer;">🎙️ Smarte Entnahme</button>
@@ -98,14 +95,13 @@
 
         <div class="data-card"><div id="l-content"></div></div>
         <div class="terminal" id="term">> System online...</div>
-        <div class="reset-link" onclick="localStorage.clear(); location.reload();">Reset Config & Cloud</div>
+        <div class="reset-link" onclick="localStorage.clear(); location.reload();">Reset Config</div>
     </div>
 
     <script>
-        let GRK = localStorage.getItem('GRK'), SURL = localStorage.getItem('SURL'), mode = 'FRIDGE', stock = [], camStream = null, scanLoop = null, scanPaused = false;
-        const recentScans = new Map();
+        let GRK = localStorage.getItem('GRK'), SURL = localStorage.getItem('SURL'), mode = 'FRIDGE', stock = [], camStream = null, isScanning = false;
 
-        if (GRK && SURL) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; refreshData(); setInterval(refreshData, 10000); }
+        if (GRK && SURL) { document.getElementById('gatekeeper').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; refreshData(); setInterval(refreshData, 15000); }
         function saveSetup() { const k = document.getElementById('api-input').value, s = document.getElementById('surl-input').value; if(k && s) { localStorage.setItem('GRK', k); localStorage.setItem('SURL', s.trim()); location.reload(); } }
 
         async function refreshData() {
@@ -113,9 +109,9 @@
                 const r = await fetch(SURL);
                 const data = await r.json();
                 stock = data.sort((a,b) => new Date(b.addedAt) - new Date(a.addedAt));
-                log(`Google-Sync: OK (${stock.length} Artikel)`);
+                log(`Sync: OK (${stock.length} Artikel)`);
                 render();
-            } catch(e) { log("Sync Fehler", false); }
+            } catch(e) { log("Sync Wartezeit...", false); }
         }
 
         function render() {
@@ -125,7 +121,7 @@
             document.getElementById('ui-chef').style.display = (mode === 'CHEF' ? 'block' : 'none');
             document.getElementById('ui-shop').style.display = (mode === 'SHOP' ? 'block' : 'none');
             document.getElementById('manual-form').style.display = (mode === 'CHEF' || mode === 'SHOP' ? 'none' : 'flex');
-            cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;"><span class="qty-badge">${i.qty}x</span><div><b style="color:var(--gold);">${i.name}</b><br><input type="text" class="mhd-edit" value="${i.mhd}" onchange="updateMHD('${i.id}', this.value)"></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LISTE LEER</div>';
+            cont.innerHTML = filtered.map(i => `<div class="row"><div style="display:flex; align-items:center;"><span class="qty-badge">${i.qty}x</span><div><b style="color:var(--gold);">${i.name}</b><br><span style="font-size:10px; color:#555;">${i.mhd}</span></div></div><span onclick="del('${i.id}')" style="color:red; cursor:pointer; font-size:22px;">×</span></div>`).join('') || '<div style="text-align:center; padding:20px; color:#333;">LEER</div>';
         }
 
         async function push(action, name, qty, mhd, id) {
@@ -133,89 +129,80 @@
             setTimeout(refreshData, 1500);
         }
 
-        async function updateMHD(id, val) { log("Aktualisiere MHD..."); await push("updateMHD", "", 0, val, id); }
         async function del(id) { if(confirm("Löschen?")) { await push("delete", "", 0, "", id); stock = stock.filter(i => i.id !== id); render(); } }
         async function addManual() { const n = document.getElementById('manual-name').value; if(n) { const id = "ID"+Date.now(); await push("add", n, 1, "?", id); document.getElementById('manual-name').value = ''; } }
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
-        function isDuplicate(name){
-            const key = name.toLowerCase(); const now = Date.now();
-            if(recentScans.has(key) && now - recentScans.get(key) < 30000) return true;
-            recentScans.set(key, now); return false;
-        }
-
-        function pauseScanning(){ if(scanLoop){ clearInterval(scanLoop); scanLoop = null; } scanPaused = true; sBtn.innerText = "⏸️ Warten..."; }
-        function resumeScanning(){ scanPaused = false; if(!scanLoop && camStream){ scanLoop = setInterval(()=>analyze(true), 2500); sBtn.innerText = "Dauerscan STOP"; } }
-
-        async function showFeedback(items){
-            pauseScanning();
-            const box = document.getElementById('scan-feedback'); box.innerHTML = ''; box.style.display = 'flex';
-            for(const it of items){
-                const hasMHD = it.mhd && it.mhd !== '?' && /\d{2}\.\d{2}\.\d{4}/.test(it.mhd);
-                const div = document.createElement('div'); div.className = 'check-item';
-                div.innerHTML = `<div class="${hasMHD?'check-ok':'check-warn'}">${hasMHD?'✓':'!'}</div><div><b>${it.name}</b></div>`;
-                box.appendChild(div);
-                if(!hasMHD && !isDuplicate(it.name + "_asked")){
-                    const neu = prompt(`MHD für "${it.name}"?`);
-                    if(neu) it.mhd = neu;
-                }
-            }
-            setTimeout(()=>{ box.style.display='none'; resumeScanning(); }, 1200);
-        }
-
-        const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
+        // --- SNAPSHOT CAMERA LOGIC ---
         function toggleCamera() {
+            const v = document.getElementById('v'), p = document.getElementById('p-text'), sBtn = document.getElementById('scanBtn');
             if(!camStream) {
                 navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:1920}}})
-                .then(s=>{ camStream=v.srcObject=s; v.style.display="block"; document.getElementById('p-text').style.display="none"; sBtn.innerText="Jetzt Scannen"; stopBtn.style.display="block"; });
+                .then(s => { camStream = v.srcObject = s; v.style.display = "block"; p.style.display = "none"; sBtn.style.display = "block"; log("Kamera aktiv."); });
             } else {
-                if(scanLoop){ clearInterval(scanLoop); scanLoop=null; sBtn.innerText="Jetzt Scannen"; laser.style.display="none"; }
-                else { analyze(true); scanLoop=setInterval(()=>analyze(true), 3500); sBtn.innerText="Dauerscan STOP"; }
+                camStream.getTracks().forEach(t => t.stop()); camStream = null;
+                v.style.display = "none"; p.style.display = "block"; sBtn.style.display = "none"; log("Kamera aus.");
             }
         }
-        function stopCam() { if(scanLoop) clearInterval(scanLoop); if (camStream) camStream.getTracks().forEach(t => t.stop()); camStream = null; v.style.display = "none"; stopBtn.style.display = "none"; sBtn.innerText = "Kamera Starten"; }
 
-        async function analyze(multi = false) {
-            if(scanPaused) return; laser.style.display = "block";
-            const shots = [];
-            for (let i=0;i<3;i++){
-                const can = document.createElement('canvas'); can.width = 1024; can.height = 1024;
-                can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
-                shots.push({type:"image_url", image_url:{url: can.toDataURL('image/jpeg',0.7)}});
-                await new Promise(r=>setTimeout(r,400));
-            }
+        async function takeSnapshot() {
+            if(isScanning) return;
+            isScanning = true;
+            const v = document.getElementById('v'), box = document.getElementById('scan-feedback');
+            log("KI analysiert Foto...");
+            box.style.display = "flex"; box.innerHTML = "<b style='color:var(--neon)'>STARTE ANALYSE...</b>";
+
+            const can = document.createElement('canvas'); can.width = 1280; can.height = 960;
+            can.getContext('2d').drawImage(v, 0, 0, 1280, 960);
+            
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
                         model: "meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages: [{ role: "system", content: "Antworte NUR JSON." },
-                        { role: "user", content: [{ type: "text", text: "Erkenne ALLES. JSON: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"?\"}]}" }, ...shots] }],
-                        response_format: { type: "json_object" }, temperature: 0
+                        messages: [{ role: "system", content: "Antworte NUR JSON: {\"products\":[{\"name\":\"...\",\"anzahl\":1,\"mhd\":\"?\"}]}" },
+                        { role: "user", content: [{ type: "text", text: "Erkenne alles auf diesem Bild." }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.8) } }] }],
+                        response_format: { type: "json_object" }
                     })
                 });
-                const j = await r.json(); const items = JSON.parse(j.choices[0].message.content).products || [];
+                const j = await r.json(); 
+                const items = JSON.parse(j.choices[0].message.content).products || [];
+                
                 if(items.length) {
-                    await showFeedback(items);
-                    for(let it of items){
-                        const id = "SCAN" + Date.now();
-                        await push("add", it.name, it.anzahl, it.mhd, id);
-                        log("✅ Cloud: " + it.name);
+                    box.innerHTML = `<h3 style='color:var(--gold)'>${items.length} Produkte erkannt:</h3>`;
+                    for(let it of items) {
+                        const mhd = prompt(`Mindesthaltbarkeit für "${it.name}"?`, "");
+                        await push("add", it.name, it.anzahl, mhd || "?", "SCAN" + Date.now() + Math.random());
+                        log("✅ " + it.name + " gespeichert.");
                     }
-                }
+                } else { log("Nichts erkannt."); }
             } catch(e) { log("API Fehler.", true); }
-            laser.style.display = "none";
+            
+            box.style.display = "none";
+            isScanning = false;
         }
 
+        // --- AI FEATURES ---
         async function runKaroChef() {
             const i = document.getElementById('chef-input').value; const inv = stock.map(s => s.name).join(", ");
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Kühlschrank: [${inv}]. Wunsch: "${i}". Nenne Rezept & Preise.` }] })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Bestand: [${inv}]. Wunsch: "${i}". Nenne Rezept & Preise.` }] })
                 });
                 const j = await r.json(); document.getElementById('chef-out').innerText = j.choices[0].message.content;
             } catch(e) { document.getElementById('chef-out').innerText = "KI Fehler."; }
+        }
+
+        async function runShopAI() {
+            const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty}x ${i.name}`).join(", ");
+            try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Einkauf: ${sl}. Bad Hersfeld Preise.` }] })
+                });
+                const j = await r.json(); document.getElementById('shop-out').innerText = j.choices[0].message.content;
+            } catch(e) { log("Radar Fehler.", true); }
         }
 
         function exportList() {
@@ -232,13 +219,14 @@
                 const t = e.results[0][0].transcript;
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Lösche laut: "${t}" aus ${JSON.stringify(stock)}. JSON: { "remove": [ { "id": "ID" } ] }` }], response_format: { type: "json_object" } })
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: `Was löschen aus ${JSON.stringify(stock)} bei: "${t}"? JSON: { "remove": [ { "id": "ID" } ] }` }], response_format: { type: "json_object" } })
                 });
                 const j = await r.json(); const updates = JSON.parse(j.choices[0].message.content).remove;
                 for(let u of updates) { await push("delete", "", 0, "", u.id); }
             };
             rec.onend = () => { btn.style.background = ""; }; rec.start();
         }
+
         const log = (m, isE=false) => { term.innerHTML += `<br><span style="color:${isE?'red':''}">> ${m}</span>`; term.scrollTop = term.scrollHeight; };
     </script>
 </body>
