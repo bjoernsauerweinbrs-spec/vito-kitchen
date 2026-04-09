@@ -41,7 +41,7 @@
         .qty-badge { background: #333; color: var(--gold); padding: 3px 8px; border-radius: 5px; font-size: 12px; margin-right: 10px; font-weight: bold; border: 1px solid var(--gold); }
         .mhd-edit { background: none; border: 1px solid rgba(0,242,255,0.3); color: var(--neon); font-size: 11px; width: 80px; padding: 5px; border-radius: 5px; text-align: center; outline: none; }
         
-        /* AI PANELS */
+        /* PANELS */
         .ai-panel { display: none; background: rgba(0, 242, 255, 0.05); border: 1px solid var(--neon); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .recipe-box { margin-top: 15px; font-size: 13px; line-height: 1.6; color: #eee; white-space: pre-wrap; border-top: 1px solid var(--neon); padding-top: 10px; }
         .manual-add { display: flex; gap: 5px; margin-bottom: 15px; }
@@ -112,10 +112,6 @@
         </div>
 
         <div class="terminal" id="term">> System online...</div>
-        
-        <div style="text-align:center; margin-top:10px;">
-            <button onclick="testFirebase()" style="background:none; border:none; color:var(--gold); font-size:10px; text-decoration:underline; cursor:pointer;">📡 Verbindung testen</button>
-        </div>
     </div>
 
     <script>
@@ -126,26 +122,9 @@
         function saveKey() { const i = document.getElementById('api-input').value; if(i) { localStorage.setItem('GRK', i); location.reload(); } }
 
         function initFirebase() {
-            try {
-                if (!firebase.apps.length) firebase.initializeApp(cfg);
-                db = firebase.firestore();
-                db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => { 
-                    stock = s.docs.map(d => ({id: d.id, ...d.data()})); 
-                    render(); 
-                }, e => log("FIREBASE-FEHLER: " + e.message, true));
-            } catch(e) { log("System-Initialisierung fehlgeschlagen.", true); }
-        }
-
-        async function testFirebase() {
-            log("Verbindung wird geprüft...");
-            try {
-                const t = await db.collection("inventory").add({ name: "System-Test", zone: "TEST", addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                log("✅ VERBINDUNG STEHT! ID: " + t.id);
-                await db.collection("inventory").doc(t.id).delete();
-            } catch(e) {
-                log("❌ FEHLER: Datenbank nicht erreichbar. Firebase existiert nicht mehr!", true);
-                alert("Warnung: Deine Datenbank scheint gelöscht zu sein. Wir müssen eine neue erstellen!");
-            }
+            if (!firebase.apps.length) firebase.initializeApp(cfg);
+            db = firebase.firestore();
+            db.collection("inventory").orderBy("addedAt", "desc").onSnapshot(s => { stock = s.docs.map(d => ({id: d.id, ...d.data()})); render(); }, e => log("DB Fehler: " + e.message, true));
         }
 
         function render() {
@@ -166,40 +145,33 @@
         window.sm = (m) => { mode = m; ['FRIDGE','FREEZER','PANTRY','SHOP','CHEF'].forEach(t => document.getElementById('t-'+t).classList.toggle('active', t === m)); render(); };
 
         const v = document.getElementById('v'), sBtn = document.getElementById('sBtn'), stopBtn = document.getElementById('stopBtn'), laser = document.getElementById('laser');
-        async function toggleCamera() {
-            if(!camStream) {
-                try {
-                    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none";
-                    sBtn.innerText = "Scan Auslösen"; stopBtn.style.display = "block"; log("Kamera aktiv.");
-                } catch(e) { log("Kamera-Fehler.", true); }
-            } else { analyze(); }
-        }
-        function stopCam() { if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; v.srcObject = null; } v.style.display = "none"; document.getElementById('p-text').style.display = "block"; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Kamera gestoppt."); }
+        async function toggleCamera() { if(!camStream) { try { camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); v.srcObject = camStream; v.style.display = "block"; document.getElementById('p-text').style.display = "none"; sBtn.innerText = "Scan Auslösen"; stopBtn.style.display = "block"; log("Kamera aktiv."); } catch(e) { log("Kamera Fehler.", true); } } else { analyze(); } }
+        function stopCam() { if (camStream) { camStream.getTracks().forEach(t => { t.stop(); t.enabled = false; }); camStream = null; v.srcObject = null; } v.style.display = "none"; document.getElementById('p-text').style.display = "block"; sBtn.innerText = "Kamera Starten"; stopBtn.style.display = "none"; log("Hardware Reset."); }
 
         async function analyze() {
             sBtn.disabled = true; sBtn.innerText = "Analysiere..."; laser.style.display = "block";
             const can = document.createElement('canvas'); can.width = 1024; can.height = 1024; can.getContext('2d').drawImage(v, 0, 0, 1024, 1024);
             try {
+                // MODELL-UPDATE: llama-3.2-90b-vision-preview (AKTUELL & UNTERSTÜTZT)
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GRK}` },
                     body: JSON.stringify({
-                        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages: [{ role: "user", content: [{ type: "text", text: "Analysiere das Bild radikal. Identifiziere JEDES Produkt einzeln (Äpfel, Gurken, Erdbeeren). Zähle sie. Gib NUR JSON zurück: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '?' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
+                        model: "llama-3.2-90b-vision-preview",
+                        messages: [{ role: "user", content: [{ type: "text", text: "Zähle Produkte. Lies MHD. Gib NUR JSON: { 'products': [{ 'name': '...', 'anzahl': 1, 'mhd': '...' }] }" }, { type: "image_url", image_url: { url: can.toDataURL('image/jpeg', 0.9) } }] }],
                         response_format: { type: "json_object" }
                     })
                 });
+                if(!r.ok) { const err = await r.json(); throw new Error(err.error?.message || "Groq API Fehler"); }
                 const j = await r.json(); const items = JSON.parse(j.choices[0].message.content).products;
                 for(let item of items) {
                     let qty = parseInt(item.anzahl) || 1, n = item.name;
                     await db.collection("inventory").add({ name: n, qty: qty, mhd: '?', zone: mode, addedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                    log(`Sicher gespeichert: ${qty}x ${n}`);
+                    log(`Gespeichert: ${qty}x ${n}`);
                 }
-            } catch(e) { log("KI-Speicher-Fehler.", true); }
+            } catch(e) { log("KI Fehler: " + e.message, true); }
             sBtn.disabled = false; sBtn.innerText = "Scan Auslösen"; laser.style.display = "none";
         }
 
-        // --- VOICE & AI MODULES (VOLLSTÄNDIG) ---
         function toggleSmartEntnahme() {
             const btn = document.getElementById('voice-trigger-btn');
             if(!isListening) {
@@ -229,15 +201,15 @@
                         else await db.collection("inventory").doc(u.id).update({ qty: nq });
                     }
                 }
-                window.speechSynthesis.speak(new SpeechSynthesisUtterance("Abgebucht."));
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance("Bestand aktualisiert."));
             } catch(e) { log("Voice Fehler.", true); }
         }
 
         async function runKaroChef() {
             const i = document.getElementById('chef-input').value;
             const inv = stock.filter(s => s.zone !== 'SHOP').map(s => `${s.qty||1}x ${s.name}`).join(", ");
-            const out = document.getElementById('chef-out'); out.innerText = "Karo liest Bestand...";
-            const p = `Du bist Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise (Lidl, Aldi, Rewe).`;
+            const out = document.getElementById('chef-out'); out.innerText = "Karo plant...";
+            const p = `Karo Advisor. BESTAND: [${inv}]. Wunsch: "${i}". Nenne Rezept & Hersfeld-Preise (Lidl, Aldi, Rewe).`;
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${GRK}`, "Content-Type": "application/json" },
@@ -249,7 +221,7 @@
 
         async function runShopAI() {
             const sl = stock.filter(i=>i.zone==='SHOP').map(i=>`${i.qty||1}x ${i.name}`).join(", ");
-            const p = `Einkauf: ${sl}. Wo in Bad Hersfeld am günstigsten?`;
+            const p = `Einkauf: ${sl}. Hersfeld Preis-Check.`;
             const out = document.getElementById('shop-out'); out.innerText = "Radar läuft...";
             try {
                 const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
